@@ -20,3 +20,4 @@ models/lstm_cobosense/*
 .env
 *.log
 .hf_token
+backend/venv/
