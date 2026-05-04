@@ -1,0 +1,91 @@
+[0.037s] Invoking command in '/home/kamal/projects/nexus/ros2_ws/build/champ_base': AMENT_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/cmake /home/kamal/projects/nexus/ros2_ws/src/unitree_go2_ros2/champ_base -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/kamal/projects/nexus/ros2_ws/install/champ_base
+[0.274s] -- The C compiler identification is GNU 13.3.0
+[0.484s] -- The CXX compiler identification is GNU 13.3.0
+[0.551s] -- Detecting C compiler ABI info
+[0.871s] -- Detecting C compiler ABI info - done
+[0.912s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.913s] -- Detecting C compile features
+[0.915s] -- Detecting C compile features - done
+[0.945s] -- Detecting CXX compiler ABI info
+[1.307s] -- Detecting CXX compiler ABI info - done
+[1.348s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[1.349s] -- Detecting CXX compile features
+[1.351s] -- Detecting CXX compile features - done
+[1.365s] -- Found ament_cmake: 2.5.6 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[1.966s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[2.286s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[2.481s] -- Found rclcpp: 28.1.18 (/opt/ros/jazzy/share/rclcpp/cmake)
+[2.681s] -- Found rosidl_generator_c: 4.6.7 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[2.755s] -- Found rosidl_generator_cpp: 4.6.7 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[2.839s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[2.932s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[3.303s] -- Found rmw_implementation_cmake: 7.3.3 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+[3.318s] -- Found rmw_fastrtps_cpp: 8.4.3 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)
+[3.659s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.13")  
+[3.740s] -- Found FastRTPS: /opt/ros/jazzy/include (Required is at least version "2.13") 
+[3.826s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[4.192s] -- Found rclpy: 7.1.11 (/opt/ros/jazzy/share/rclpy/cmake)
+[4.193s] -- Found champ_msgs: 0.1.0 (/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/share/champ_msgs/cmake)
+[4.434s] -- Found visualization_msgs: 5.3.7 (/opt/ros/jazzy/share/visualization_msgs/cmake)
+[4.737s] -- Found trajectory_msgs: 5.3.7 (/opt/ros/jazzy/share/trajectory_msgs/cmake)
+[4.876s] -- Found nav_msgs: 5.3.7 (/opt/ros/jazzy/share/nav_msgs/cmake)
+[5.039s] -- Found tf2_ros: 0.36.20 (/opt/ros/jazzy/share/tf2_ros/cmake)
+[6.035s] -- Found urdf: 2.10.0 (/opt/ros/jazzy/share/urdf/cmake)
+[6.188s] -- Found champ: 0.1.0 (/home/kamal/projects/nexus/ros2_ws/install/champ/share/champ/cmake)
+[6.761s] -- Configuring done (6.7s)
+[6.976s] -- Generating done (0.1s)
+[7.037s] -- Build files have been written to: /home/kamal/projects/nexus/ros2_ws/build/champ_base
+[7.089s] Invoked command in '/home/kamal/projects/nexus/ros2_ws/build/champ_base' returned '0': AMENT_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/cmake /home/kamal/projects/nexus/ros2_ws/src/unitree_go2_ros2/champ_base -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/kamal/projects/nexus/ros2_ws/install/champ_base
+[7.093s] Invoking command in '/home/kamal/projects/nexus/ros2_ws/build/champ_base': AMENT_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/cmake --build /home/kamal/projects/nexus/ros2_ws/build/champ_base -- -j4 -l4
+[7.295s] [  8%] Building CXX object CMakeFiles/message_relay.dir/src/message_relay.cpp.o
+[7.305s] [ 16%] Building CXX object CMakeFiles/quadruped_controller.dir/src/quadruped_controller.cpp.o
+[7.310s] [ 25%] Building CXX object CMakeFiles/state_estimation.dir/src/state_estimation.cpp.o
+[1139.804s] [ 33%] Linking CXX shared library libmessage_relay.so
+[1164.818s] [ 33%] Built target message_relay
+[1338.877s] [ 41%] Linking CXX shared library libstate_estimation.so
+[1344.314s] [ 41%] Built target state_estimation
+[1344.568s] [ 58%] Building CXX object CMakeFiles/message_relay_node.dir/src/message_relay_node.cpp.o
+[1344.569s] [ 58%] Building CXX object CMakeFiles/state_estimation_node.dir/src/state_estimation_node.cpp.o
+[1374.098s] [ 66%] Linking CXX executable message_relay_node
+[1379.124s] [ 66%] Built target message_relay_node
+[1383.518s] [ 75%] Linking CXX executable state_estimation_node
+[1387.454s] [ 75%] Built target state_estimation_node
+[1399.551s] [ 83%] Linking CXX shared library libquadruped_controller.so
+[1403.115s] [ 83%] Built target quadruped_controller
+[1403.208s] [ 91%] Building CXX object CMakeFiles/quadruped_controller_node.dir/src/quadruped_controller_node.cpp.o
+[1416.891s] [100%] Linking CXX executable quadruped_controller_node
+[1419.523s] [100%] Built target quadruped_controller_node
+[1419.582s] Invoked command in '/home/kamal/projects/nexus/ros2_ws/build/champ_base' returned '0': AMENT_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/cmake --build /home/kamal/projects/nexus/ros2_ws/build/champ_base -- -j4 -l4
+[1419.719s] Invoking command in '/home/kamal/projects/nexus/ros2_ws/build/champ_base': AMENT_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/cmake --install /home/kamal/projects/nexus/ros2_ws/build/champ_base
+[1419.745s] -- Install configuration: ""
+[1419.757s] -- Execute custom install script
+[1419.764s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/config/ekf/base_to_footprint.yaml
+[1419.797s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/config/ekf/footprint_to_odom.yaml
+[1419.829s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/config/velocity_smoother/velocity_smoother.yaml
+[1419.864s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/lib/libquadruped_controller.so
+[1419.895s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/bin/quadruped_controller_node
+[1419.927s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/lib/libmessage_relay.so
+[1419.960s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/bin/message_relay_node
+[1419.996s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/lib/libstate_estimation.so
+[1420.028s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/bin/state_estimation_node
+[1420.065s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/lib/champ_base/quadruped_controller_node
+[1420.097s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/lib/champ_base/message_relay_node
+[1420.130s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/lib/champ_base/state_estimation_node
+[1420.165s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/ament_index/resource_index/package_run_dependencies/champ_base
+[1420.198s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/ament_index/resource_index/parent_prefix_path/champ_base
+[1420.266s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/environment/ament_prefix_path.sh
+[1420.300s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/environment/ament_prefix_path.dsv
+[1420.331s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/environment/path.sh
+[1420.360s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/environment/path.dsv
+[1420.389s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/local_setup.bash
+[1420.419s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/local_setup.sh
+[1420.453s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/local_setup.zsh
+[1420.483s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/local_setup.dsv
+[1420.512s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/package.dsv
+[1420.544s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/ament_index/resource_index/packages/champ_base
+[1420.576s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/cmake/ament_cmake_export_include_directories-extras.cmake
+[1420.633s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/cmake/ament_cmake_export_dependencies-extras.cmake
+[1420.672s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/cmake/champ_baseConfig.cmake
+[1420.704s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/cmake/champ_baseConfig-version.cmake
+[1420.736s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/champ_base/share/champ_base/package.xml
+[1420.781s] Invoked command in '/home/kamal/projects/nexus/ros2_ws/build/champ_base' returned '0': AMENT_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs:/home/kamal/projects/nexus/ros2_ws/install/champ:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/kamal/projects/nexus/ros2_ws/install/champ_msgs/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/cmake --install /home/kamal/projects/nexus/ros2_ws/build/champ_base

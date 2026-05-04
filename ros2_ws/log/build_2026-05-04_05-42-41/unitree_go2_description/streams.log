@@ -1,0 +1,62 @@
+[0.081s] Invoking command in '/home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/kamal/projects/nexus/ros2_ws/src/unitree_go2_ros2/unitree_go2_description -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description
+[2.826s] -- The C compiler identification is GNU 13.3.0
+[3.779s] -- The CXX compiler identification is GNU 13.3.0
+[3.908s] -- Detecting C compiler ABI info
+[4.463s] -- Detecting C compiler ABI info - done
+[4.522s] -- Check for working C compiler: /usr/bin/cc - skipped
+[4.522s] -- Detecting C compile features
+[4.531s] -- Detecting C compile features - done
+[4.580s] -- Detecting CXX compiler ABI info
+[5.162s] -- Detecting CXX compiler ABI info - done
+[5.215s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[5.216s] -- Detecting CXX compile features
+[5.219s] -- Detecting CXX compile features - done
+[5.464s] -- Found ament_cmake: 2.5.6 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[6.293s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[6.871s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[7.924s] -- Configuring done (6.9s)
+[7.934s] -- Generating done (0.0s)
+[7.940s] -- Build files have been written to: /home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description
+[7.957s] Invoked command in '/home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/kamal/projects/nexus/ros2_ws/src/unitree_go2_ros2/unitree_go2_description -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description
+[7.961s] Invoking command in '/home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description -- -j4 -l4
+[8.147s] Invoked command in '/home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description -- -j4 -l4
+[8.192s] Invoking command in '/home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description
+[8.234s] -- Install configuration: ""
+[8.238s] -- Execute custom install script
+[8.240s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/worlds/default.sdf
+[8.284s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/L1_4D_Lidar.dae
+[8.335s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/VLP16_base_1.dae
+[8.372s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/VLP16_base_2.dae
+[8.413s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/VLP16_scan.dae
+[8.469s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/calf.dae
+[8.486s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/calf_mirror.dae
+[8.542s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/foot.dae
+[8.606s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/hip.dae
+[8.674s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/hokuyo.dae
+[8.741s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/thigh.dae
+[8.791s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/thigh_mirror.dae
+[8.867s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/meshes/trunk.dae
+[8.946s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/urdf/const.xacro
+[8.978s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/urdf/leg.xacro
+[9.009s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/urdf/lidar_4D_lidar.xacro
+[9.042s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/urdf/materials.xacro
+[9.077s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/urdf/realsense_d455.xacro
+[9.110s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/urdf/unitree_go2_gazebo.xacro
+[9.153s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/urdf/unitree_go2_robot.xacro
+[9.192s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/urdf/velodyne.xacro
+[9.228s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/ament_index/resource_index/package_run_dependencies/unitree_go2_description
+[9.680s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/ament_index/resource_index/parent_prefix_path/unitree_go2_description
+[9.680s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/environment/ament_prefix_path.sh
+[9.681s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/environment/ament_prefix_path.dsv
+[9.686s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/environment/path.sh
+[9.690s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/environment/path.dsv
+[9.690s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/local_setup.bash
+[9.691s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/local_setup.sh
+[9.692s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/local_setup.zsh
+[9.693s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/local_setup.dsv
+[9.694s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/package.dsv
+[9.695s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/ament_index/resource_index/packages/unitree_go2_description
+[9.695s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/cmake/unitree_go2_descriptionConfig.cmake
+[9.711s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/cmake/unitree_go2_descriptionConfig-version.cmake
+[9.747s] -- Symlinking: /home/kamal/projects/nexus/ros2_ws/install/unitree_go2_description/share/unitree_go2_description/package.xml
+[9.789s] Invoked command in '/home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/kamal/projects/nexus/ros2_ws/build/unitree_go2_description

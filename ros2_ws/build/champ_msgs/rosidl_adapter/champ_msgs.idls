@@ -1,0 +1,9 @@
+/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_adapter/champ_msgs:msg/Velocities.idl
+/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_adapter/champ_msgs:msg/PID.idl
+/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_adapter/champ_msgs:msg/Imu.idl
+/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_adapter/champ_msgs:msg/Point.idl
+/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_adapter/champ_msgs:msg/PointArray.idl
+/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_adapter/champ_msgs:msg/Joints.idl
+/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_adapter/champ_msgs:msg/Contacts.idl
+/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_adapter/champ_msgs:msg/ContactsStamped.idl
+/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_adapter/champ_msgs:msg/Pose.idl

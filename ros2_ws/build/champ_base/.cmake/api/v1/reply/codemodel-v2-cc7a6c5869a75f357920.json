@@ -1,0 +1,124 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-1b33d4bd7370153135ea.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.15"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					]
+				}
+			],
+			"name" : "",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "champ_base",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "champ_base_uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-champ_base_uninstall-3e6b50685e511ed2c8e9.json",
+					"name" : "champ_base_uninstall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "message_relay::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-message_relay-3fee89e1e09137fd4956.json",
+					"name" : "message_relay",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "message_relay_node::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-message_relay_node-ad098f3956a84d8301f2.json",
+					"name" : "message_relay_node",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "quadruped_controller::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-quadruped_controller-4435a4160ff230046af6.json",
+					"name" : "quadruped_controller",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "quadruped_controller_node::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-quadruped_controller_node-a82c8bbf1098951a7939.json",
+					"name" : "quadruped_controller_node",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "state_estimation::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-state_estimation-a3f3f9ed8e32e66b5a9d.json",
+					"name" : "state_estimation",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "state_estimation_node::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-state_estimation_node-21b2dc6ff640e8e710f5.json",
+					"name" : "state_estimation_node",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uninstall-93d2dd2f9b0e7d230043.json",
+					"name" : "uninstall",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/kamal/projects/nexus/ros2_ws/build/champ_base",
+		"source" : "/home/kamal/projects/nexus/ros2_ws/src/unitree_go2_ros2/champ_base"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}

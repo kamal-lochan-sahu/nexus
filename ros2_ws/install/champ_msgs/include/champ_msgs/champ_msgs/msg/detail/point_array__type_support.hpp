@@ -1,0 +1,1 @@
+/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_generator_cpp/champ_msgs/msg/detail/point_array__type_support.hpp
