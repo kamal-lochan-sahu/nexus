@@ -19,3 +19,4 @@ models/lstm_cobosense/*
 # Misc
 .env
 *.log
+.hf_token
