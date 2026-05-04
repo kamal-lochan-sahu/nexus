@@ -91,3 +91,76 @@ async def websocket_endpoint(websocket: WebSocket):
 # ── Entry point ───────────────────────────────────────────────────
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+# ── NL2RC Imports ─────────────────────────────────────────────────
+import sys
+sys.path.insert(0, "/home/kamal/projects/nexus/backend")
+
+from modules.nl2rc.safety_pre import check_safety
+from modules.nl2rc.llm_engine import call_llm
+from core.safety_post import validate_command
+from ros2.bridge import ros_bridge
+
+# ── POST /command ─────────────────────────────────────────────────
+@app.post("/command")
+async def process_command(payload: dict):
+    user_text = payload.get("text", "")
+
+    # Layer 1: Pre-LLM safety check
+    pre = check_safety(user_text)
+    if not pre["safe"]:
+        return {"status": "rejected", "stage": "safety_pre", "reason": pre["reason"]}
+
+    # LLM call
+    llm_result = await call_llm(user_text)
+    if "error" in llm_result:
+        return {"status": "error", "stage": "llm", "reason": llm_result["error"]}
+
+    # LLM output se flat command banao
+    try:
+        plan_step = llm_result["plan"][0]
+        params    = plan_step.get("params", {})
+
+        # action map karo
+        direction = params.get("direction", "forward")
+        action_map = {
+            "forward":  "move_forward",
+            "backward": "move_backward",
+            "left":     "turn_left",
+            "right":    "turn_right",
+        }
+        action = action_map.get(direction, "move_forward")
+
+        cmd_dict = {
+            "action":   action,
+            "distance": float(params.get("distance", 0.0)),
+            "velocity": float(params.get("velocity", 0.3)),
+            "confidence": float(llm_result.get("confidence", 1.0)),
+        }
+    except (KeyError, IndexError) as e:
+        return {"status": "error", "stage": "parser", "reason": f"LLM output parse failed: {e}"}
+
+    # Layer 2: Post-LLM safety check
+    post = validate_command(cmd_dict)
+    if not post["safe"]:
+        return {"status": "rejected", "stage": "safety_post", "reason": post["reason"]}
+
+    # Bridge → Robot
+    final = post["command"]
+    linear_x  = final.get("velocity", 0.3)
+    angular_z = 0.0
+    if final["action"] == "turn_left":
+        linear_x, angular_z = 0.0, 0.5
+    elif final["action"] == "turn_right":
+        linear_x, angular_z = 0.0, -0.5
+    elif final["action"] == "move_backward":
+        linear_x = -linear_x
+
+    ros_bridge.send_cmd_vel(linear_x=linear_x, angular_z=angular_z)
+
+    return {
+        "status":   "executed",
+        "command":  final,
+        "modified": post["modified"],
+        "reason":   post["reason"],
+    }
