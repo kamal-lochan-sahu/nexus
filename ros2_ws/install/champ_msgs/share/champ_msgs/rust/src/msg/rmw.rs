@@ -1,1 +1,0 @@
-/home/kamal/projects/nexus/ros2_ws/build/champ_msgs/rosidl_generator_rs/champ_msgs/rust/src/msg/rmw.rs

@@ -1,1 +1,0 @@
-/home/kamal/projects/nexus/ros2_ws/src/unitree_go2_ros2/champ/include/champ/utils/xmlrpc_helpers.h

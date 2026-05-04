@@ -1,1 +1,0 @@
-/home/kamal/projects/nexus/ros2_ws/build/champ/ament_cmake_core/champConfig-version.cmake
