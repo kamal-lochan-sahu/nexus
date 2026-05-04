@@ -21,3 +21,4 @@ models/lstm_cobosense/*
 *.log
 .hf_token
 backend/venv/
+.groq_token
