@@ -106,3 +106,36 @@ async def log_safety_event(event_type, zone, distance_m, human_intent,
                 (ts, event_type, zone, distance_m, human_intent, speed_before, speed_after, duration_ms),
             )
             await db.commit()
+
+async def batch_flush(
+    robot_state_data: dict,
+    joints_data: list[dict],
+) -> None:
+    """
+    Single connection mein sab kuch likho.
+    robot_state + 12 joints = 1 transaction, 1 commit.
+    Replaces 13 separate inserts → ~50ms instead of ~2000ms.
+    """
+    ts = time.time()
+    async with _write_lock:
+        async with aiosqlite.connect(DB_PATH) as db:
+            # Robot state
+            await db.execute(
+                "INSERT INTO robot_state (robot_id,timestamp,pos_x,pos_y,pos_z,heading_deg,velocity,gait,mode) VALUES (?,?,?,?,?,?,?,?,?)",
+                (robot_state_data["robot_id"], ts,
+                 robot_state_data["pos_x"],    robot_state_data["pos_y"],
+                 robot_state_data["pos_z"],     robot_state_data["heading_deg"],
+                 robot_state_data["velocity"],  robot_state_data["gait"],
+                 robot_state_data["mode"]),
+            )
+            # 12 joints — executemany = single roundtrip
+            rows = [
+                (j["robot_id"], ts, j["joint_name"], j["health_pct"],
+                 j["temperature"], j["vibration"], j["current_a"], j["wear_rate"])
+                for j in joints_data
+            ]
+            await db.executemany(
+                "INSERT INTO joint_health (robot_id,timestamp,joint_name,health_pct,temperature,vibration,current_a,wear_rate) VALUES (?,?,?,?,?,?,?,?)",
+                rows,
+            )
+            await db.commit()
