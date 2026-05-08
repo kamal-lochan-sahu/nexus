@@ -15,7 +15,11 @@ async def lifespan(app: FastAPI):
     print("[NEXUS] Backend starting...")
     app.state.start_time = time.time()
     app.state.connected_clients = []
+    from backend.modules.cognitive_twin.scheduler import start_scheduler, stop_scheduler, set_broadcast_fn
+    set_broadcast_fn(broadcast_twin_update)
+    start_scheduler()
     yield
+    stop_scheduler()
     # Ye code server band hone pe chalta hai
     print("[NEXUS] Backend shutting down...")
 
@@ -164,3 +168,11 @@ async def process_command(payload: dict):
         "modified": post["modified"],
         "reason":   post["reason"],
     }
+
+
+async def broadcast_twin_update(data: dict):
+    """WebSocket broadcast — Step 8 mein full implementation hogi"""
+    import json
+    msg = json.dumps(data)
+    # connected clients ko send karo (Step 8 mein wired hoga)
+    print(f"[WS] Twin alert: {msg}")
