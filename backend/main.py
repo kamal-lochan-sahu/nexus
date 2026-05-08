@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+# Project root ko path mein daalo — saare imports fix ho jayenge
+sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent))
+
 import asyncio
 import json
 import time
@@ -81,12 +87,8 @@ async def websocket_endpoint(websocket: WebSocket):
     print(f"[WS] Client connected. Total: {len(app.state.connected_clients)}")
     try:
         while True:
-            # Placeholder: 2Hz pe dummy state bhejo
-            await websocket.send_text(json.dumps({
-                "type": "state_update",
-                "timestamp": datetime.utcnow().isoformat(),
-                "system": "online",
-            }))
+            payload = await build_ws_payload()
+            await websocket.send_text(json.dumps(payload))
             await asyncio.sleep(0.5)
     except WebSocketDisconnect:
         app.state.connected_clients.remove(websocket)
@@ -170,9 +172,76 @@ async def process_command(payload: dict):
     }
 
 
+async def build_ws_payload() -> dict:
+    """
+    Har 500ms yeh payload build hota hai aur sabhi clients ko jaata hai.
+    DB se latest state + joints + forecast fetch karta hai.
+    """
+    from backend.database.crud import (
+        get_latest_robot_state,
+        get_all_joints_latest,
+        get_active_forecasts,
+    )
+
+    # Robot state
+    state = await get_latest_robot_state() or {}
+
+    # Joint health — {joint_name: {health, temp, status}}
+    joints_raw = await get_all_joints_latest()
+    joints = {}
+    for j in joints_raw:
+        name   = j["joint_name"]
+        health = j["health_pct"]
+        status = "ok" if health > 70 else ("warning" if health > 40 else "critical")
+        joints[name] = {
+            "health": round(health, 1),
+            "temp":   round(j["temperature"], 1),
+            "status": status,
+        }
+
+    # Latest critical/warning forecast
+    forecasts = await get_active_forecasts()
+    prediction = {}
+    if forecasts:
+        f = forecasts[0]  # highest confidence first
+        prediction = {
+            "joint":         f["joint_name"],
+            "fail_in_hours": f["fail_in_hours"],
+            "confidence":    f["confidence"],
+            "severity":      f["severity"],
+        }
+
+    return {
+        "type":      "state_update",
+        "timestamp": datetime.utcnow().isoformat(),
+        "system":    "online",
+        "robot": {
+            "pos_x":       state.get("pos_x", 0.0),
+            "pos_y":       state.get("pos_y", 0.0),
+            "heading_deg": state.get("heading_deg", 0.0),
+            "velocity":    state.get("velocity", 0.0),
+            "gait":        state.get("gait", "stand"),
+            "mode":        state.get("mode", "idle"),
+        },
+        "twin": {
+            "joints":     joints,
+            "prediction": prediction,
+        },
+    }
+
+
 async def broadcast_twin_update(data: dict):
-    """WebSocket broadcast — Step 8 mein full implementation hogi"""
-    import json
+    """
+    APScheduler se call hota hai jab critical alert aata hai.
+    Sabhi connected clients ko alert bhejta hai.
+    """
     msg = json.dumps(data)
-    # connected clients ko send karo (Step 8 mein wired hoga)
-    print(f"[WS] Twin alert: {msg}")
+    dead = []
+    for ws in app.state.connected_clients:
+        try:
+            await ws.send_text(msg)
+        except Exception:
+            dead.append(ws)
+    for ws in dead:
+        app.state.connected_clients.remove(ws)
+    print(f"[WS] Twin alert sent to {len(app.state.connected_clients)} clients")
