@@ -8,10 +8,6 @@ import asyncio
 import json
 import time
 from contextlib import asynccontextmanager
-
-# ── CoboSense imports ─────────────────────────────────────────────
-from modules.cobosense.cobosense_service import CoboSenseService
-from modules.cobosense.cobosense_router import cobosense_router, set_service
 from datetime import datetime
 
 import uvicorn
@@ -28,22 +24,8 @@ async def lifespan(app: FastAPI):
     from backend.modules.cognitive_twin.scheduler import start_scheduler, stop_scheduler, set_broadcast_fn
     set_broadcast_fn(broadcast_twin_update)
     start_scheduler()
-
-    # ── CoboSense — Layer 3 Safety (always-on) ───────────────────
-    cobosense_svc = CoboSenseService(
-        camera_index=0,
-        broadcast_callback=broadcast_safety_update,
-        fps_target=15,
-    )
-    set_service(cobosense_svc)
-    app.state.cobosense = cobosense_svc
-    asyncio.create_task(cobosense_svc.run_loop())
-    print("[NEXUS] CoboSense Layer 3 Safety — ACTIVE")
-
     yield
-
     stop_scheduler()
-    cobosense_svc.stop()
     # Ye code server band hone pe chalta hai
     print("[NEXUS] Backend shutting down...")
 
@@ -54,9 +36,6 @@ app = FastAPI(
     version="4.0.0",
     lifespan=lifespan,
 )
-
-# ── Routers ──────────────────────────────────────────────────────
-app.include_router(cobosense_router)   # /safety/* endpoints
 
 # CORS — frontend (Next.js :3000) ko allow karo
 app.add_middleware(
@@ -232,18 +211,6 @@ async def build_ws_payload() -> dict:
             "severity":      f["severity"],
         }
 
-    # CoboSense safety payload
-    safety = {}
-    try:
-        safety = app.state.cobosense.current_payload
-    except AttributeError:
-        safety = {
-            "human_detected": False, "zone": "NONE",
-            "distance_m": 999.0, "intent": "static",
-            "intent_conf": 1.0, "speed_override": 0.5,
-            "speed_multiplier": 1.0, "incidents_today": 0,
-        }
-
     return {
         "type":      "state_update",
         "timestamp": datetime.utcnow().isoformat(),
@@ -260,24 +227,7 @@ async def build_ws_payload() -> dict:
             "joints":     joints,
             "prediction": prediction,
         },
-        "safety": safety,
     }
-
-
-async def broadcast_safety_update(data: dict):
-    """CoboSense → WebSocket broadcast (every frame with human detected)."""
-    msg = json.dumps(data)
-    dead = []
-    for ws in app.state.connected_clients:
-        try:
-            await ws.send_text(msg)
-        except Exception:
-            dead.append(ws)
-    for ws in dead:
-        try:
-            app.state.connected_clients.remove(ws)
-        except ValueError:
-            pass
 
 
 async def broadcast_twin_update(data: dict):
