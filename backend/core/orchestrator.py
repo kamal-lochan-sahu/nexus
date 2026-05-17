@@ -42,7 +42,7 @@ class Orchestrator:
     """
 
     def __init__(self):
-        from backend.modules.robo_rl.policy_runner import PolicyRunner
+        from modules.robo_rl.policy_runner import PolicyRunner
         self._rl_runner = PolicyRunner()
         self._active_module = None
 
@@ -105,7 +105,7 @@ class Orchestrator:
 
         # Import NL2RC pipeline (Phase 1)
         try:
-            from backend.modules.nl2rc.pipeline import NL2RCPipeline
+            from modules.nl2rc.pipeline import NL2RCPipeline
             pipeline = NL2RCPipeline()
             result   = pipeline.run(command)
             return {
