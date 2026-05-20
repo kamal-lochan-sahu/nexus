@@ -1,0 +1,117 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <world name="flexcell_world">
+
+    <!-- Physics -->
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- Plugins -->
+    <plugin filename="gz-sim-physics-system"
+            name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-user-commands-system"
+            name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-sensors-system"
+            name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- Ground plane -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Zone markers (visual only) -->
+    <!-- Zone A top-left -->
+    <model name="zone_A">
+      <static>true</static>
+      <pose>-1.5 1.5 0.01 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>3 3 0.01</size></box></geometry>
+          <material><ambient>0.2 0.6 0.2 0.3</ambient></material>
+        </visual>
+      </link>
+    </model>
+    <!-- Zone B top-right -->
+    <model name="zone_B">
+      <static>true</static>
+      <pose>1.5 1.5 0.01 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>3 3 0.01</size></box></geometry>
+          <material><ambient>0.2 0.2 0.8 0.3</ambient></material>
+        </visual>
+      </link>
+    </model>
+    <!-- Zone C bottom-left -->
+    <model name="zone_C">
+      <static>true</static>
+      <pose>-1.5 -1.5 0.01 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>3 3 0.01</size></box></geometry>
+          <material><ambient>0.8 0.6 0.2 0.3</ambient></material>
+        </visual>
+      </link>
+    </model>
+    <!-- Zone D bottom-right -->
+    <model name="zone_D">
+      <static>true</static>
+      <pose>1.5 -1.5 0.01 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>3 3 0.01</size></box></geometry>
+          <material><ambient>0.8 0.2 0.6 0.3</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Go2-A spawns at zone A center -->
+    <include>
+      <uri>model://go2</uri>
+      <name>go2_a</name>
+      <pose>-1.5 1.5 0.3 0 0 0</pose>
+      <experimental:params>
+        <param name="//plugin[@name='gz::sim::systems::Diff​Drive']/namespace">go2_a</param>
+        <param name="//plugin[@name='gz::sim::systems::OdometryPublisher']/odom_topic">go2_a/odom</param>
+      </experimental:params>
+    </include>
+
+    <!-- Go2-B spawns at zone C center -->
+    <include>
+      <uri>model://go2</uri>
+      <name>go2_b</name>
+      <pose>-1.5 -1.5 0.3 0 0 1.57</pose>
+      <experimental:params>
+        <param name="//plugin[@name='gz::sim::systems::Diff​Drive']/namespace">go2_b</param>
+        <param name="//plugin[@name='gz::sim::systems::OdometryPublisher']/odom_topic">go2_b/odom</param>
+      </experimental:params>
+    </include>
+
+    <!-- Ambient light -->
+    <light name="sun" type="directional">
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+  </world>
+</sdf>
