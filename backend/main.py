@@ -12,6 +12,10 @@ from contextlib import asynccontextmanager
 # ── CoboSense imports ─────────────────────────────────────────────
 from modules.cobosense.cobosense_service import CoboSenseService
 from modules.cobosense.cobosense_router import cobosense_router, set_service
+
+from modules.flexcell.flexcell_router import router as flexcell_router
+from modules.flexcell.fleet_scheduler import get_scheduler
+from modules.flexcell.conflict_resolver import get_resolver
 from datetime import datetime
 
 import uvicorn
@@ -40,10 +44,20 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(cobosense_svc.run_loop())
     print("[NEXUS] CoboSense Layer 3 Safety — ACTIVE")
 
+    # ── FlexCell — Multi-robot coordination ─────────────────────
+    scheduler = get_scheduler()
+    resolver  = get_resolver()
+    await scheduler.start()
+    await resolver.start()
+    print("[NEXUS] FlexCell Multi-robot Coordination — ACTIVE")
+
     yield
 
     stop_scheduler()
     cobosense_svc.stop()
+
+    await scheduler.stop()
+    await resolver.stop()
     # Ye code server band hone pe chalta hai
     print("[NEXUS] Backend shutting down...")
 
@@ -57,6 +71,8 @@ app = FastAPI(
 
 # ── Routers ──────────────────────────────────────────────────────
 app.include_router(cobosense_router)   # /safety/* endpoints
+
+app.include_router(flexcell_router)    # /flexcell/* endpoints
 
 # CORS — frontend (Next.js :3000) ko allow karo
 app.add_middleware(
@@ -261,6 +277,8 @@ async def build_ws_payload() -> dict:
             "prediction": prediction,
         },
         "safety": safety,
+
+        "fleet": get_scheduler().get_fleet_status(),
     }
 
 

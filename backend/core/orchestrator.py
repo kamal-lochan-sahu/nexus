@@ -14,6 +14,13 @@ from typing import Dict, Any
 
 
 # Navigation keywords → RoboRL
+# Multi-robot keywords → FlexCell
+FLEET_KEYWORDS = [
+    "patrol", "both robots", "all robots", "fleet",
+    "coordinate", "inspect zone", "guard zone",
+    "entire floor", "factory floor",
+]
+
 NAV_KEYWORDS = [
     "navigate", "go to", "move to", "head to",
     "drive to", "travel to", "reach", "proceed to",
@@ -53,6 +60,10 @@ class Orchestrator:
         """
         cmd_lower = command.lower().strip()
 
+        # ── Route: multi-robot task → FlexCell ─────────────────────
+        if self._is_fleet_task(cmd_lower):
+            return self._handle_fleet(command)
+
         # ── Route: autonomous navigation → RoboRL ───────────────────
         if self._is_navigation(cmd_lower):
             return self._handle_navigation(command)
@@ -61,7 +72,20 @@ class Orchestrator:
         return self._handle_nl2rc(command)
 
     # ── NAVIGATION (RoboRL) ──────────────────────────────────────────
-    def _is_navigation(self, cmd: str) -> bool:
+    
+    # ── FLEET (FlexCell) ────────────────────────────────────────────
+    def _is_fleet_task(self, cmd: str) -> bool:
+        return any(kw in cmd for kw in FLEET_KEYWORDS)
+
+    def _handle_fleet(self, command: str) -> Dict[str, Any]:
+        return {
+            "module": "flexcell",
+            "action": "decompose",
+            "goal":   command,
+            "status": "queued",
+        }
+
+def _is_navigation(self, cmd: str) -> bool:
         return any(kw in cmd for kw in NAV_KEYWORDS)
 
     def _handle_navigation(self, command: str) -> Dict[str, Any]:
