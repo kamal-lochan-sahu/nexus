@@ -1,11 +1,9 @@
 """
-EmbodiedGPT — VLA Engine
-Pipeline: frame → CLIP → YOLO → Groq → JSON
-SEQUENTIAL: Never parallel. CLIP first, YOLO second, Groq third.
+EmbodiedGPT — VLA Engine v2
+Fixes: SIGALRM Groq timeout + CLIP text cache
 """
-import os, json, time, logging, warnings
+import os, json, time, logging, warnings, signal
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 
 warnings.filterwarnings("ignore")
 from clip_encoder import CLIPEncoder
@@ -23,13 +21,17 @@ except Exception as e:
     GROQ_OK = False
     logger.warning(f"Groq not available: {e}")
 
-VLA_SYSTEM_PROMPT = """You are a VLA controller for a quadruped robot (Unitree Go2).
-Output ONLY valid JSON, no markdown, no explanation.
-Rules: velocity max 0.5, approach_distance 0.3-1.0m.
-If target not detected, use intent=search with rotate action.
+VLA_SYSTEM_PROMPT = """You are a VLA controller for Unitree Go2 robot.
+Output ONLY valid JSON. No markdown. No explanation.
+velocity max=0.5, approach_distance=0.3-1.0m.
+FORMAT: {"original_input":"...","module_used":"embodied_gpt","intent":"visual_navigate|search","visual_context":{"detected_objects":[...],"scene_summary":"...","clip_confidence":0.0,"target_found":false},"plan":[{"step":1,"action":"navigate|search","params":{"target":"...","approach_distance":0.5,"velocity":0.3}}],"safety_check":"clear","confidence":0.0}"""
 
-FORMAT:
-{"original_input":"...","module_used":"embodied_gpt","intent":"visual_navigate|search|inspect|stop","visual_context":{"detected_objects":[...],"scene_summary":"...","clip_confidence":0.0,"target_found":false},"plan":[{"step":1,"action":"navigate|rotate|stop|search","params":{"target":"...","approach_distance":0.5,"velocity":0.3}}],"safety_check":"clear","confidence":0.0}"""
+
+class _GroqTimeout(Exception):
+    pass
+
+def _sigalrm_handler(signum, frame):
+    raise _GroqTimeout()
 
 
 class VLAEngine:
@@ -38,6 +40,7 @@ class VLAEngine:
         self.yolo = YOLODetector()
         self.frame_count = 0
         self._initialized = False
+        self._text_cache = {}  # command → text vector cache
 
     def initialize(self):
         if self._initialized:
@@ -48,77 +51,82 @@ class VLAEngine:
         self._initialized = True
         logger.info("VLA Engine ready")
 
+    def _encode_text_cached(self, command: str) -> np.ndarray:
+        """Cache text encoding — same command pe CLIP text inference skip"""
+        if command not in self._text_cache:
+            self._text_cache[command] = self.clip.encode_text(command)
+            # Keep cache small
+            if len(self._text_cache) > 10:
+                self._text_cache.pop(next(iter(self._text_cache)))
+        return self._text_cache[command]
+
     def process(self, frame: np.ndarray, command: str) -> dict:
         if not self._initialized:
             self.initialize()
         t_start = time.time()
         self.frame_count += 1
 
-        # Step 1: CLIP encode
+        # Step 1: CLIP encode frame only (text cached)
         logger.info("Step 1/4: CLIP encoding...")
         t0 = time.time()
-        scene_vec = self.clip.encode_frame(frame)
-        clip_sim = float(np.dot(scene_vec, self.clip.encode_text(command)))
-        logger.info(f"  CLIP: {(time.time()-t0)*1000:.0f}ms, sim={clip_sim:.3f}")
+        img_vec = self.clip.encode_frame(frame)
+        txt_vec = self._encode_text_cached(command)
+        clip_sim = float(np.dot(img_vec, txt_vec))
+        logger.info(f"  CLIP: {(time.time()-t0)*1000:.0f}ms sim={clip_sim:.3f}")
 
-        # Step 2: YOLO detect (odd frames only)
+        # Step 2: YOLO (odd frames)
         detections = []
         if self.frame_count % 2 == 1:
             logger.info("Step 2/4: YOLO detecting...")
             t0 = time.time()
             detections = self.yolo.detect_objects(frame)
-            logger.info(f"  YOLO: {(time.time()-t0)*1000:.0f}ms, {len(detections)} objects")
+            logger.info(f"  YOLO: {(time.time()-t0)*1000:.0f}ms {len(detections)} objects")
         else:
             logger.info("Step 2/4: YOLO skipped (even frame)")
 
-        # Step 3: Build context
+        # Step 3: Context
         target_found = any(
             w in d["label"].lower()
             for d in detections
-            for w in command.lower().split()
-            if len(w) > 3
+            for w in command.lower().split() if len(w) > 3
         )
         scene_summary = (
-            f"detected: {', '.join(d['label'] for d in detections[:4])}"
+            "detected: " + ", ".join(d["label"] for d in detections[:4])
             if detections else "no objects detected"
-        ) + f" | CLIP sim={clip_sim:.2f}"
+        ) + f" | sim={clip_sim:.2f}"
 
-        # Step 4: Groq with 8s timeout
+        # Step 4: Groq with SIGALRM timeout (8s, Linux-native)
         logger.info("Step 4/4: Groq generating plan...")
         t0 = time.time()
-        result = self._groq_with_timeout(
-            command, detections, scene_summary, clip_sim, target_found
-        )
+        result = self._groq_call(command, detections, scene_summary,
+                                  clip_sim, target_found)
         logger.info(f"  Groq: {(time.time()-t0)*1000:.0f}ms")
         logger.info(f"VLA total: {(time.time()-t_start)*1000:.0f}ms")
         return result
 
-    def _groq_with_timeout(self, command, detections, scene_summary,
-                            clip_sim, target_found) -> dict:
+    def _groq_call(self, command, detections, scene_summary,
+                    clip_sim, target_found) -> dict:
         if not GROQ_OK:
             return self._fallback(command, detections, scene_summary,
                                    clip_sim, target_found)
-        prompt = (
-            f'Command: "{command}"\n'
-            f"CLIP similarity: {clip_sim:.3f}\n"
-            f"Target found: {target_found}\n"
-            f"Objects: {json.dumps(detections[:4])}\n"
-            f"Scene: {scene_summary}\n"
-            f"Generate JSON action plan."
-        )
-        def _call():
-            return groq_client.chat.completions.create(
+        prompt = (f'Command: "{command}"\n'
+                  f"CLIP sim: {clip_sim:.3f} | Target found: {target_found}\n"
+                  f"Objects: {json.dumps(detections[:3])}\n"
+                  f"Scene: {scene_summary}\nGenerate JSON plan.")
+        try:
+            # SIGALRM: Linux-native 8s hard timeout
+            signal.signal(signal.SIGALRM, _sigalrm_handler)
+            signal.alarm(8)
+            resp = groq_client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
                     {"role": "system", "content": VLA_SYSTEM_PROMPT},
                     {"role": "user",   "content": prompt}
                 ],
-                max_tokens=400,
+                max_tokens=350,
                 temperature=0.1
             )
-        try:
-            with ThreadPoolExecutor(max_workers=1) as ex:
-                resp = ex.submit(_call).result(timeout=8.0)
+            signal.alarm(0)  # Cancel alarm
             raw = resp.choices[0].message.content.strip()
             if "```" in raw:
                 raw = raw.split("```")[1]
@@ -128,9 +136,11 @@ class VLAEngine:
             result["original_input"] = command
             result["module_used"] = "embodied_gpt"
             return result
-        except FuturesTimeout:
-            logger.warning("Groq timeout (8s) — fallback")
+        except _GroqTimeout:
+            signal.alarm(0)
+            logger.warning("Groq SIGALRM timeout (8s) — fallback")
         except Exception as e:
+            signal.alarm(0)
             logger.warning(f"Groq error: {e} — fallback")
         return self._fallback(command, detections, scene_summary,
                                clip_sim, target_found)
