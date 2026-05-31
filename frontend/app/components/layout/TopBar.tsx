@@ -1,5 +1,6 @@
 'use client'
-import { useRef } from 'react'
+// @ts-nocheck
+import React from 'react'
 
 interface Props { wsStatus: string; uptime: number }
 

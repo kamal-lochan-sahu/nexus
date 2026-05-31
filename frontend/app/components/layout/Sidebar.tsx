@@ -54,7 +54,7 @@ export default function Sidebar({ activeView, onViewChange, data }: Props) {
       {/* Fleet Status */}
       <div style={{ padding:'12px 14px', borderTop:'1px solid var(--border)' }}>
         <p className="label" style={{ marginBottom:8 }}>FLEET STATUS</p>
-        {[['Go2-A 🐕', goA.status, goA.battery], ['Go2-B 🐕', goB.status, goB.battery]].map(([nm, st, bat]) => (
+        {[['Go2-A 🐕', goA.status], ['Go2-B 🐕', goB.status]].map(([nm, st, bat]) => (
           <div key={nm as string} style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
             marginBottom:6, fontSize:11, fontFamily:'var(--font-mono)' }}>
             <span style={{ color:'var(--text-secondary)' }}>{nm}</span>
