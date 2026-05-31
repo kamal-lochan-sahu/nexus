@@ -1,146 +1,88 @@
-// frontend/app/components/twin/Robot3D.tsx
-// Three.js — simplified Go2 3D viewer
-// Joints color-coded by health: green/amber/red
-// No URDF loader needed — geometric representation
+'use client'
+import { TwinData } from '../../../hooks/useMockData'
 
-"use client";
-import { useEffect, useRef } from "react";
-import * as THREE from "three";
+interface Props { data: TwinData }
 
-interface JointHealth {
-  health: number;
-  temp: number;
-  status: "ok" | "warning" | "critical";
-}
+export default function Robot3D({ data }: Props) {
+  const j = data.joints  // 12 values
 
-interface Robot3DProps {
-  joints: Record<string, JointHealth>;
-}
+  // Top-down SVG quadruped — body + 4 legs (each 3 joints)
+  const legPoints = (bx:number, by:number, angle:number, j1:number, j2:number) => {
+    const rad = (a:number) => (a * Math.PI) / 180
+    const x1 = bx + Math.cos(rad(angle)) * 22
+    const y1 = by + Math.sin(rad(angle)) * 22
+    const x2 = x1 + Math.cos(rad(angle + j1*0.5)) * 20
+    const y2 = y1 + Math.sin(rad(angle + j1*0.5)) * 20
+    const x3 = x2 + Math.cos(rad(angle + j2*0.4)) * 18
+    const y3 = y2 + Math.sin(rad(angle + j2*0.4)) * 18
+    return { hip:[bx,by], knee:[x1,y1], ankle:[x2,y2], foot:[x3,y3] }
+  }
 
-// Joint 3D positions on Go2 body (relative to center)
-const JOINT_POSITIONS: Record<string, [number, number, number]> = {
-  FR_hip:   [ 0.2,  0,  0.15], FR_thigh: [ 0.2, -0.1,  0.15], FR_calf: [ 0.2, -0.25,  0.15],
-  FL_hip:   [ 0.2,  0, -0.15], FL_thigh: [ 0.2, -0.1, -0.15], FL_calf: [ 0.2, -0.25, -0.15],
-  RR_hip:   [-0.2,  0,  0.15], RR_thigh: [-0.2, -0.1,  0.15], RR_calf: [-0.2, -0.25,  0.15],
-  RL_hip:   [-0.2,  0, -0.15], RL_thigh: [-0.2, -0.1, -0.15], RL_calf: [-0.2, -0.25, -0.15],
-};
+  const cx=130, cy=130
+  const legs = [
+    legPoints(cx-28, cy-20, -140, j[0], j[1]),   // FL
+    legPoints(cx+28, cy-20,  -40, j[3], j[4]),    // FR
+    legPoints(cx-28, cy+20,  140, j[6], j[7]),    // RL
+    legPoints(cx+28, cy+20,   40, j[9], j[10]),   // RR
+  ]
 
-function healthToColor(health: number): THREE.Color {
-  if (health > 70) return new THREE.Color(0x22c55e);  // green
-  if (health > 40) return new THREE.Color(0xf59e0b);  // amber
-  return new THREE.Color(0xef4444);                    // red
-}
-
-export default function Robot3D({ joints }: Robot3DProps) {
-  const mountRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<{
-    renderer: THREE.WebGLRenderer;
-    scene: THREE.Scene;
-    jointMeshes: Record<string, THREE.Mesh>;
-    animId: number;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!mountRef.current) return;
-    const W = mountRef.current.clientWidth;
-    const H = mountRef.current.clientHeight;
-
-    // ── Scene setup ──
-    const scene    = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f172a);
-
-    const camera = new THREE.PerspectiveCamera(45, W / H, 0.01, 100);
-    camera.position.set(0.8, 0.6, 0.8);
-    camera.lookAt(0, 0, 0);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(W, H);
-    renderer.shadowMap.enabled = true;
-    mountRef.current.appendChild(renderer.domElement);
-
-    // ── Lighting ──
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-    dir.position.set(1, 2, 1);
-    scene.add(dir);
-
-    // ── Robot body ──
-    const bodyGeo  = new THREE.BoxGeometry(0.45, 0.1, 0.28);
-    const bodyMat  = new THREE.MeshLambertMaterial({ color: 0x1e293b });
-    const body     = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.05;
-    scene.add(body);
-
-    // ── Head ──
-    const headGeo = new THREE.BoxGeometry(0.12, 0.08, 0.12);
-    const head    = new THREE.Mesh(headGeo, new THREE.MeshLambertMaterial({ color: 0x334155 }));
-    head.position.set(0.27, 0.1, 0);
-    scene.add(head);
-
-    // ── Grid floor ──
-    scene.add(new THREE.GridHelper(2, 20, 0x1e293b, 0x1e293b));
-
-    // ── Joint spheres ──
-    const jointMeshes: Record<string, THREE.Mesh> = {};
-    Object.entries(JOINT_POSITIONS).forEach(([name, pos]) => {
-      const geo  = new THREE.SphereGeometry(0.025, 12, 12);
-      const mat  = new THREE.MeshLambertMaterial({ color: 0x22c55e });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(...pos);
-      scene.add(mesh);
-      jointMeshes[name] = mesh;
-    });
-
-    // ── Leg bones (lines between joints) ──
-    const legPairs = [
-      ["FR_hip","FR_thigh"], ["FR_thigh","FR_calf"],
-      ["FL_hip","FL_thigh"], ["FL_thigh","FL_calf"],
-      ["RR_hip","RR_thigh"], ["RR_thigh","RR_calf"],
-      ["RL_hip","RL_thigh"], ["RL_thigh","RL_calf"],
-    ];
-    legPairs.forEach(([a, b]) => {
-      const pa = JOINT_POSITIONS[a], pb = JOINT_POSITIONS[b];
-      const points = [new THREE.Vector3(...pa), new THREE.Vector3(...pb)];
-      const geo  = new THREE.BufferGeometry().setFromPoints(points);
-      const mat  = new THREE.LineBasicMaterial({ color: 0x475569 });
-      scene.add(new THREE.Line(geo, mat));
-    });
-
-    // ── Slow rotation ──
-    let angle = 0;
-    let animId = 0;
-    const animate = () => {
-      animId = requestAnimationFrame(animate);
-      angle += 0.005;
-      camera.position.x = Math.sin(angle) * 1.0;
-      camera.position.z = Math.cos(angle) * 1.0;
-      camera.lookAt(0, 0, 0);
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    sceneRef.current = { renderer, scene, jointMeshes, animId };
-
-    return () => {
-      cancelAnimationFrame(animId);
-      renderer.dispose();
-      mountRef.current?.removeChild(renderer.domElement);
-    };
-  }, []);
-
-  // ── Update joint colors on health change ──
-  useEffect(() => {
-    if (!sceneRef.current) return;
-    const { jointMeshes } = sceneRef.current;
-    Object.entries(joints).forEach(([name, data]) => {
-      const mesh = jointMeshes[name];
-      if (mesh) {
-        (mesh.material as THREE.MeshLambertMaterial).color = healthToColor(data.health);
-      }
-    });
-  }, [joints]);
+  const healthColor = data.health > 90 ? 'var(--success)' : data.health > 75 ? 'var(--warning)' : 'var(--danger)'
 
   return (
-    <div ref={mountRef} className="w-full h-full rounded-lg overflow-hidden" />
-  );
+    <div className="card factory-grid" style={{ padding:14, display:'flex', flexDirection:'column' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+        <p className="label">UNITREE GO2 — DIGITAL TWIN</p>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <span className="dot dot-on"/>
+          <span style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'var(--success)' }}>LIVE</span>
+        </div>
+      </div>
+      <svg viewBox="0 0 260 260" style={{ flex:1, display:'block', width:'100%' }}>
+        {/* Legs */}
+        {legs.map((leg, li) => (
+          <g key={li}>
+            <line x1={leg.hip[0]}   y1={leg.hip[1]}   x2={leg.knee[0]}  y2={leg.knee[1]}
+              stroke="var(--accent-purple)" strokeWidth="3" strokeLinecap="round"/>
+            <line x1={leg.knee[0]}  y1={leg.knee[1]}  x2={leg.ankle[0]} y2={leg.ankle[1]}
+              stroke="var(--accent-cyan)" strokeWidth="2.5" strokeLinecap="round"/>
+            <line x1={leg.ankle[0]} y1={leg.ankle[1]} x2={leg.foot[0]}  y2={leg.foot[1]}
+              stroke="var(--accent-cyan)" strokeWidth="2" strokeLinecap="round" opacity=".7"/>
+            <circle cx={leg.knee[0]}  cy={leg.knee[1]}  r="3" fill="var(--accent-purple)"/>
+            <circle cx={leg.ankle[0]} cy={leg.ankle[1]} r="2.5" fill="var(--accent-cyan)" opacity=".8"/>
+            <circle cx={leg.foot[0]}  cy={leg.foot[1]}  r="2" fill="var(--text-secondary)"/>
+          </g>
+        ))}
+        {/* Body */}
+        <rect x={cx-30} y={cy-18} width="60" height="36" rx="6"
+          fill="var(--bg-card)" stroke="var(--accent-cyan)" strokeWidth="1.5"/>
+        {/* Head */}
+        <rect x={cx-14} y={cy-30} width="28" height="16" rx="4"
+          fill="var(--bg-card)" stroke="var(--accent-purple)" strokeWidth="1.5"/>
+        {/* Eyes */}
+        <circle cx={cx-5}  cy={cy-23} r="3" fill="var(--accent-cyan)" opacity=".9"/>
+        <circle cx={cx+5}  cy={cy-23} r="3" fill="var(--accent-cyan)" opacity=".9"/>
+        {/* Spine indicators */}
+        {[-12,-4,4,12].map(x => (
+          <circle key={x} cx={cx+x} cy={cy} r="2" fill="var(--accent-purple)" opacity=".7"/>
+        ))}
+        {/* Health overlay */}
+        <text x={cx} y={cy+9} textAnchor="middle"
+          fill={healthColor} fontSize="9" fontFamily="monospace" fontWeight="700">
+          {data.health.toFixed(0)}%
+        </text>
+      </svg>
+      {/* Joint values */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:3, marginTop:8 }}>
+        {['FL','FR','RL','RR'].map((leg,li) => (
+          <div key={leg} style={{ padding:'4px 6px', background:'var(--bg-secondary)',
+            borderRadius:2, textAlign:'center' }}>
+            <p style={{ fontSize:9, color:'var(--text-secondary)' }}>{leg}</p>
+            <p style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'var(--accent-cyan)' }}>
+              {(j[li*3]||0).toFixed(0)}°
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
