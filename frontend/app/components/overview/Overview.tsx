@@ -13,7 +13,7 @@ const MODULES = [
 ]
 
 export default function Overview({ data }: Props) {
-  const { kpis, fleet, twin } = data
+  const { kpis, fleet } = data
   const kpiCards = [
     { label:'Units Assembled', val: kpis.units,    unit:'',  color:'var(--accent-cyan)' },
     { label:'Safety Incidents',val: kpis.incidents, unit:'', color:'var(--success)' },

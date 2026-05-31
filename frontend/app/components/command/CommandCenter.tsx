@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 
 interface CmdResult {
   id: number; input: string; ts: number
@@ -7,7 +7,7 @@ interface CmdResult {
   safetyL1: 'PASS'|'FAIL'; safetyL2: 'PASS'|'FAIL'; status: string
 }
 
-const INTENTS: Record<string,{intent:string;module:string;conf:number}> = {
+const _INTENTS: Record<string,{intent:string;module:string;conf:number}> = {
   default: { intent:'navigate_to_waypoint', module:'NL2RC', conf:0.91 },
 }
 
