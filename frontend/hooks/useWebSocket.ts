@@ -1,98 +1,38 @@
-"use client";
+'use client'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
-import { useEffect, useRef, useState, useCallback } from "react";
+export type WSStatus = 'CONNECTING'|'CONNECTED'|'DISCONNECTED'|'ERROR'
 
-export type WsStatus = "connecting" | "connected" | "disconnected" | "error";
-
-export interface WsMessage {
-  type: string;
-  payload: unknown;
-  timestamp: string;
-}
-
-export interface UseWebSocketReturn {
-  status: WsStatus;
-  lastMessage: WsMessage | null;
-  sendMessage: (msg: object) => void;
-  reconnect: () => void;
-}
-
-const WS_URL = "ws://localhost:8000/ws";
-const RECONNECT_DELAY_MS = 3000;
-const MAX_RECONNECT_ATTEMPTS = 5;
-
-export function useWebSocket(): UseWebSocketReturn {
-  const wsRef          = useRef<WebSocket | null>(null);
-  const reconnectCount = useRef(0);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mountedRef     = useRef(true);
-
-  const [status, setStatus]           = useState<WsStatus>("disconnected");
-  const [lastMessage, setLastMessage] = useState<WsMessage | null>(null);
+export function useWebSocket(url: string) {
+  const [status, setStatus]   = useState<WSStatus>('CONNECTING')
+  const [lastMsg, setLastMsg] = useState<string|null>(null)
+  const ws  = useRef<WebSocket|null>(null)
+  const tmr = useRef<ReturnType<typeof setTimeout>|null>(null)
+  const alive = useRef(true)
 
   const connect = useCallback(() => {
-    if (wsRef.current) {
-      wsRef.current.onclose = null;
-      wsRef.current.close();
+    if (!alive.current) return
+    try {
+      const sock = new WebSocket(url)
+      ws.current = sock
+      sock.onopen    = () => alive.current && setStatus('CONNECTED')
+      sock.onmessage = e  => alive.current && setLastMsg(e.data)
+      sock.onclose   = () => { if (alive.current) { setStatus('DISCONNECTED'); tmr.current = setTimeout(connect, 3000) } }
+      sock.onerror   = () => { setStatus('ERROR'); sock.close() }
+    } catch {
+      if (alive.current) { setStatus('DISCONNECTED'); tmr.current = setTimeout(connect, 5000) }
     }
-    if (!mountedRef.current) return;
-    if (reconnectCount.current >= MAX_RECONNECT_ATTEMPTS) {
-      setStatus("error");
-      return;
-    }
-    setStatus("connecting");
-    const ws = new WebSocket(WS_URL);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      if (!mountedRef.current) return;
-      reconnectCount.current = 0;
-      setStatus("connected");
-    };
-
-    ws.onmessage = (event: MessageEvent) => {
-      if (!mountedRef.current) return;
-      try {
-        setLastMessage(JSON.parse(event.data as string));
-      } catch {
-        setLastMessage({ type: "raw", payload: event.data, timestamp: new Date().toISOString() });
-      }
-    };
-
-    ws.onerror = () => setStatus("error");
-
-    ws.onclose = () => {
-      if (!mountedRef.current) return;
-      setStatus("disconnected");
-      reconnectCount.current += 1;
-      reconnectTimer.current = setTimeout(() => {
-        if (mountedRef.current) connect();
-      }, RECONNECT_DELAY_MS);
-    };
-  }, []);
+  }, [url])
 
   useEffect(() => {
-    mountedRef.current = true;
-    connect();
-    return () => {
-      mountedRef.current = false;
-      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-      wsRef.current?.close();
-    };
-  }, [connect]);
+    alive.current = true
+    connect()
+    return () => { alive.current = false; tmr.current && clearTimeout(tmr.current); ws.current?.close() }
+  }, [connect])
 
-  const sendMessage = useCallback((msg: object) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(msg));
-    } else {
-      console.warn("[WS] Not connected.");
-    }
-  }, []);
+  const send = useCallback((msg: string) => {
+    if (ws.current?.readyState === WebSocket.OPEN) ws.current.send(msg)
+  }, [])
 
-  const reconnect = useCallback(() => {
-    reconnectCount.current = 0;
-    connect();
-  }, [connect]);
-
-  return { status, lastMessage, sendMessage, reconnect };
+  return { status, lastMsg, send }
 }

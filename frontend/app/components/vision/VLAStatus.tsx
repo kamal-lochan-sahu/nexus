@@ -1,111 +1,53 @@
 'use client'
-import { useState } from 'react'
+import { VisionData } from '../../../hooks/useMockData'
 
-type PipelineStatus = 'idle' | 'processing' | 'executing' | 'complete' | 'error'
+interface Props { data: VisionData }
 
-interface VLAStatusProps {
-  status: PipelineStatus
-  command?: string
-  vlaOutput?: any
-  totalMs?: number
-  onCommand?: (cmd: string) => void
-}
-
-const STATUS_COLORS: Record<PipelineStatus, string> = {
-  idle:       'text-gray-400 border-gray-600',
-  processing: 'text-yellow-400 border-yellow-500',
-  executing:  'text-blue-400 border-blue-500',
-  complete:   'text-green-400 border-green-500',
-  error:      'text-red-400 border-red-500',
-}
-
-const PIPELINE_STEPS = [
-  { key: 'clip',   label: 'CLIP Encode',    icon: '👁' },
-  { key: 'yolo',   label: 'YOLO Detect',    icon: '🎯' },
-  { key: 'groq',   label: 'Groq Plan',      icon: '🧠' },
-  { key: 'safety', label: 'Safety Check',   icon: '🛡' },
-  { key: 'nav',    label: 'Navigate',       icon: '🤖' },
+const PIPELINE = [
+  {label:'CLIP', sub:'Vision encoder'},
+  {label:'YOLOv8', sub:'Object detect'},
+  {label:'Groq LLM', sub:'Llama-3.1-8b'},
+  {label:'Action', sub:'Go2 dispatch'},
 ]
 
-export default function VLAStatus({
-  status = 'idle',
-  command = '',
-  vlaOutput,
-  totalMs,
-  onCommand,
-}: VLAStatusProps) {
-  const [inputCmd, setInputCmd] = useState('')
-
-  const currentStep = {
-    idle: -1, processing: 1, executing: 3, complete: 4, error: -1
-  }[status]
-
+export default function VLAStatus({ data }: Props) {
   return (
-    <div className="bg-gray-900 border border-green-500/20 rounded-lg p-4 font-mono text-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-green-400 font-bold">VLA Pipeline</h3>
-        <span className={`px-2 py-0.5 rounded text-xs border ${STATUS_COLORS[status]}`}>
-          {status.toUpperCase()}
-          {totalMs ? ` ${(totalMs/1000).toFixed(1)}s` : ''}
+    <div className="card" style={{ padding:12, flex:1 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
+        <p className="label">VLA PIPELINE</p>
+        <span style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'var(--success)' }}>
+          {data.vlaStatus}
         </span>
       </div>
 
-      {/* Command Input */}
-      <div className="mb-3 flex gap-2">
-        <input
-          className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
-          placeholder="Find the yellow marker..."
-          value={inputCmd}
-          onChange={e => setInputCmd(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && onCommand) { onCommand(inputCmd); setInputCmd('') }}}
-        />
-        <button
-          onClick={() => { if (onCommand && inputCmd) { onCommand(inputCmd); setInputCmd('') }}}
-          className="px-3 py-1.5 bg-green-600 hover:bg-green-500 rounded text-xs text-white transition-colors"
-        >
-          Run
-        </button>
-      </div>
-
-      {/* Pipeline Steps */}
-      <div className="space-y-1 mb-3">
-        {PIPELINE_STEPS.map((step, i) => (
-          <div key={step.key} className={`flex items-center gap-2 px-2 py-1 rounded text-xs transition-all
-            ${i < currentStep ? 'bg-green-500/10 text-green-400' :
-              i === currentStep ? 'bg-yellow-500/10 text-yellow-400' : 'text-gray-600'}`}>
-            <span>{step.icon}</span>
-            <span>{step.label}</span>
-            {i < currentStep && <span className="ml-auto">✓</span>}
-            {i === currentStep && <span className="ml-auto animate-pulse">●</span>}
+      {/* Pipeline steps */}
+      <div style={{ display:'flex', alignItems:'center', gap:0, marginBottom:10 }}>
+        {PIPELINE.map((p, i) => (
+          <div key={p.label} style={{ display:'flex', alignItems:'center', flex:1 }}>
+            <div style={{ flex:1, textAlign:'center' }}>
+              <div style={{ padding:'4px 6px', background:'rgba(0,212,255,.08)',
+                border:'1px solid var(--accent-cyan)', borderRadius:2, marginBottom:2 }}>
+                <p style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'var(--accent-cyan)', fontWeight:700 }}>
+                  {p.label}
+                </p>
+                <p style={{ fontSize:8, color:'var(--text-secondary)' }}>{p.sub}</p>
+              </div>
+              <span className="dot dot-on" style={{ margin:'0 auto', display:'block', width:5, height:5 }}/>
+            </div>
+            {i < PIPELINE.length - 1 && (
+              <div style={{ width:8, height:1, background:'var(--accent-cyan)', opacity:.5 }}/>
+            )}
           </div>
         ))}
       </div>
 
-      {/* VLA Output Summary */}
-      {vlaOutput && (
-        <div className="p-2 bg-gray-800 rounded text-xs space-y-1">
-          <div className="flex justify-between">
-            <span className="text-gray-500">Intent</span>
-            <span className="text-cyan-400">{vlaOutput.intent}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Safety</span>
-            <span className={vlaOutput.safety_check === 'clear' ? 'text-green-400' : 'text-red-400'}>
-              {vlaOutput.safety_check}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Confidence</span>
-            <span className="text-yellow-400">{(vlaOutput.confidence * 100).toFixed(0)}%</span>
-          </div>
-          {vlaOutput.plan?.[0] && (
-            <div className="flex justify-between">
-              <span className="text-gray-500">Action</span>
-              <span className="text-green-300">{vlaOutput.plan[0].action}</span>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Latency */}
+      <div style={{ padding:'8px', background:'var(--bg-secondary)', borderRadius:3, textAlign:'center' }}>
+        <p style={{ fontSize:9, color:'var(--text-secondary)', marginBottom:3 }}>END-TO-END LATENCY</p>
+        <p style={{ fontFamily:'var(--font-mono)', fontSize:'1.4rem', fontWeight:700, color:'var(--accent-cyan)', lineHeight:1 }}>
+          {data.vlaLatency.toFixed(1)}s
+        </p>
+      </div>
     </div>
   )
 }
