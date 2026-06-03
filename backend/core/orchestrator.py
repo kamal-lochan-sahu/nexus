@@ -1,35 +1,40 @@
 """
-NEXUS Phase 4 — Step 8
-Orchestrator — routes commands to correct module.
+NEXUS Phase 8 — Step 1
+Orchestrator — routes commands to all 6 modules.
 
-Routing logic:
-  has visual reference? → EmbodiedGPT  (future)
-  multi-robot task?     → FlexCell     (future)
-  autonomous nav?       → RoboRL       ← this phase
-  direct command?       → NL2RC
+Routing priority:
+  1. visual reference?   → EmbodiedGPT
+  2. multi-robot task?   → FlexCell
+  3. autonomous nav?     → RoboRL
+  4. direct command?     → NL2RC
 """
 
 import re
 from typing import Dict, Any
 
 
-# Navigation keywords → RoboRL
-# Multi-robot keywords → FlexCell
+# ── Keyword Banks ────────────────────────────────────────────────────
+
+VISUAL_KEYWORDS = [
+    "inspect", "look at", "analyze", "identify", "detect",
+    "yellow", "red", "blue", "marker", "what is", "what's",
+    "scan", "examine", "check marker", "vision", "see",
+]
+
 FLEET_KEYWORDS = [
     "patrol", "both robots", "all robots", "fleet",
     "coordinate", "inspect zone", "guard zone",
-    "entire floor", "factory floor",
+    "entire floor", "factory floor", "full factory",
 ]
 
 NAV_KEYWORDS = [
     "navigate", "go to", "move to", "head to",
     "drive to", "travel to", "reach", "proceed to",
+    "autonomous", "auto patrol", "enable patrol",
 ]
 
-# Zone pattern: "zone A/B/C/D"
 ZONE_PATTERN = re.compile(r"\bzone\s+([ABCD])\b", re.IGNORECASE)
 
-# Zone coordinate map
 ZONES: Dict[str, tuple] = {
     "A": (-2.5,  2.5),
     "B": ( 2.5,  2.5),
@@ -42,10 +47,7 @@ class Orchestrator:
     """
     Routes natural language commands to correct module.
 
-    Example:
-        orch = Orchestrator()
-        result = orch.handle("Navigate to zone A")
-        # → {"module": "robo_rl", "action": "navigate", "zone": "A", ...}
+    Priority: EmbodiedGPT > FlexCell > RoboRL > NL2RC
     """
 
     def __init__(self):
@@ -54,53 +56,86 @@ class Orchestrator:
         self._active_module = None
 
     def handle(self, command: str) -> Dict[str, Any]:
-        """
-        Parse command and route to correct module.
-        Returns result dict with module, action, status.
-        """
         cmd_lower = command.lower().strip()
 
-        # ── Route: multi-robot task → FlexCell ─────────────────────
-        if self._is_fleet_task(cmd_lower):
-            return self._handle_fleet(command)
+        # ── Route 1: visual reference → EmbodiedGPT ─────────────────
+        if self._is_visual_task(cmd_lower):
+            return self._handle_embodied(command)
 
-        # ── Route: autonomous navigation → RoboRL ───────────────────
+        # ── Route 2: autonomous navigation → RoboRL ─────────────────
         if self._is_navigation(cmd_lower):
             return self._handle_navigation(command)
 
-        # ── Route: direct robot command → NL2RC ─────────────────────
+        # ── Route 3: multi-robot task → FlexCell ─────────────────────
+        if self._is_fleet_task(cmd_lower):
+            return self._handle_fleet(command)
+
+        # ── Route 4: direct command → NL2RC ─────────────────────────
         return self._handle_nl2rc(command)
 
-    # ── NAVIGATION (RoboRL) ──────────────────────────────────────────
-    
-    # ── FLEET (FlexCell) ────────────────────────────────────────────
+    # ── VISUAL (EmbodiedGPT) ─────────────────────────────────────────
+
+    def _is_visual_task(self, cmd: str) -> bool:
+        return any(kw in cmd for kw in VISUAL_KEYWORDS)
+
+    def _handle_embodied(self, command: str) -> Dict[str, Any]:
+        try:
+            from modules.embodied_gpt.vla_pipeline import VLAPipeline
+            pipeline = VLAPipeline()
+            result = pipeline.run(command)
+            self._active_module = "embodied_gpt"
+            return {
+                "module": "embodied_gpt",
+                "action": "vla_pipeline",
+                "command": command,
+                "result": result,
+                "status": "executed",
+            }
+        except Exception as e:
+            return {
+                "module": "embodied_gpt",
+                "action": "vla_pipeline",
+                "status": "unavailable",
+                "message": str(e),
+            }
+
+    # ── FLEET (FlexCell) ─────────────────────────────────────────────
+
     def _is_fleet_task(self, cmd: str) -> bool:
         return any(kw in cmd for kw in FLEET_KEYWORDS)
 
     def _handle_fleet(self, command: str) -> Dict[str, Any]:
-        return {
-            "module": "flexcell",
-            "action": "decompose",
-            "goal":   command,
-            "status": "queued",
-        }
+        try:
+            from modules.flexcell.task_decomposer import TaskDecomposer
+            decomposer = TaskDecomposer()
+            result = decomposer.decompose(command)
+            self._active_module = "flexcell"
+            return {
+                "module": "flexcell",
+                "action": "decompose",
+                "goal": command,
+                "tasks": result,
+                "status": "queued",
+            }
+        except Exception as e:
+            return {
+                "module": "flexcell",
+                "action": "decompose",
+                "goal": command,
+                "status": "queued",
+                "message": str(e),
+            }
 
-def _is_navigation(self, cmd: str) -> bool:
+    # ── NAVIGATION (RoboRL) ──────────────────────────────────────────
+
+    def _is_navigation(self, cmd: str) -> bool:
         return any(kw in cmd for kw in NAV_KEYWORDS)
 
     def _handle_navigation(self, command: str) -> Dict[str, Any]:
-        # Extract zone
         zone_match = ZONE_PATTERN.search(command)
-        zone = zone_match.group(1).upper() if zone_match else ""
+        zone = zone_match.group(1).upper() if zone_match else "B"
+        goal_x, goal_y = ZONES.get(zone, ZONES["B"])
 
-        if zone in ZONES:
-            goal_x, goal_y = ZONES[zone]
-        else:
-            # Default: zone B
-            zone   = "B"
-            goal_x, goal_y = ZONES["B"]
-
-        # Stop any active navigation first
         if self._active_module == "robo_rl":
             self._rl_runner.stop_rl_navigation()
 
@@ -112,41 +147,42 @@ def _is_navigation(self, cmd: str) -> bool:
         self._active_module = "robo_rl"
 
         return {
-            "module"  : "robo_rl",
-            "action"  : "navigate",
-            "zone"    : zone,
-            "goal"    : (goal_x, goal_y),
-            "status"  : result["status"],
-            "message" : f"RL policy navigating to Zone {zone} ({goal_x}, {goal_y})",
+            "module": "robo_rl",
+            "action": "navigate",
+            "zone": zone,
+            "goal": (goal_x, goal_y),
+            "status": result["status"],
+            "message": f"RL policy navigating to Zone {zone} ({goal_x}, {goal_y})",
         }
 
     # ── DIRECT COMMAND (NL2RC) ───────────────────────────────────────
+
     def _handle_nl2rc(self, command: str) -> Dict[str, Any]:
-        # Stop RL if active
         if self._active_module == "robo_rl":
             self._rl_runner.stop_rl_navigation()
             self._active_module = None
 
-        # Import NL2RC pipeline (Phase 1)
         try:
             from modules.nl2rc.pipeline import NL2RCPipeline
             pipeline = NL2RCPipeline()
-            result   = pipeline.run(command)
+            result = pipeline.run(command)
+            self._active_module = "nl2rc"
             return {
-                "module" : "nl2rc",
-                "action" : "direct_command",
-                "result" : result,
-                "status" : "executed",
+                "module": "nl2rc",
+                "action": "direct_command",
+                "result": result,
+                "status": "executed",
             }
-        except ImportError:
+        except Exception as e:
             return {
-                "module"  : "nl2rc",
-                "action"  : "direct_command",
-                "status"  : "nl2rc_unavailable",
-                "message" : command,
+                "module": "nl2rc",
+                "action": "direct_command",
+                "status": "unavailable",
+                "message": str(e),
             }
 
-    # ── RL STATUS ────────────────────────────────────────────────────
+    # ── UTILITIES ────────────────────────────────────────────────────
+
     def get_rl_status(self) -> Dict[str, Any]:
         return self._rl_runner.get_status()
 
@@ -154,3 +190,4 @@ def _is_navigation(self, cmd: str) -> bool:
         """Emergency stop — all modules."""
         self._rl_runner.stop_rl_navigation()
         self._active_module = None
+        return {"status": "stopped", "message": "All modules halted"}
