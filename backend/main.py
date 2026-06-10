@@ -157,7 +157,16 @@ sys.path.insert(0, "/home/kamal/projects/nexus/backend")
 from modules.nl2rc.safety_pre import check_safety
 from modules.nl2rc.llm_engine import call_llm
 from core.safety_post import validate_command
-from ros2.bridge import ros_bridge
+try:
+    from ros2.bridge import ros_bridge
+    _ros_available = True
+except Exception as _ros_err:
+    print(f"[NEXUS] ROS2 bridge unavailable: {_ros_err} — cloud mode")
+    _ros_available = False
+    class _MockBridge:
+        def send_cmd_vel(self, **kw): pass
+        def is_connected(self): return False
+    ros_bridge = _MockBridge()
 
 # ── POST /command ─────────────────────────────────────────────────
 @app.post("/command")
