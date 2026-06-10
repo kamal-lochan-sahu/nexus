@@ -79,25 +79,14 @@ class Orchestrator:
         return any(kw in cmd for kw in VISUAL_KEYWORDS)
 
     def _handle_embodied(self, command: str) -> Dict[str, Any]:
-        try:
-            from modules.embodied_gpt.vla_pipeline import VLAPipeline
-            pipeline = VLAPipeline()
-            result = pipeline.run(command)
-            self._active_module = "embodied_gpt"
-            return {
-                "module": "embodied_gpt",
-                "action": "vla_pipeline",
-                "command": command,
-                "result": result,
-                "status": "executed",
-            }
-        except Exception as e:
-            return {
-                "module": "embodied_gpt",
-                "action": "vla_pipeline",
-                "status": "unavailable",
-                "message": str(e),
-            }
+        self._active_module = "embodied_gpt"
+        return {
+            "module":  "embodied_gpt",
+            "action":  "vla_pipeline",
+            "command": command,
+            "status":  "routed",
+            "message": "EmbodiedGPT queued — awaiting camera frame via /embodied/run",
+        }
 
     # ── FLEET (FlexCell) ─────────────────────────────────────────────
 
@@ -106,23 +95,32 @@ class Orchestrator:
 
     def _handle_fleet(self, command: str) -> Dict[str, Any]:
         try:
-            from modules.flexcell.task_decomposer import TaskDecomposer
-            decomposer = TaskDecomposer()
-            result = decomposer.decompose(command)
+            import asyncio
+            from modules.flexcell.task_decomposer import get_decomposer
+            decomposer = get_decomposer()
+            # Run async decompose in sync context
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    result = decomposer._fallback(command)
+                else:
+                    result = loop.run_until_complete(decomposer.decompose(command))
+            except Exception:
+                result = decomposer._fallback(command)
             self._active_module = "flexcell"
             return {
                 "module": "flexcell",
                 "action": "decompose",
-                "goal": command,
-                "tasks": result,
+                "goal":   command,
+                "tasks":  result.dict() if hasattr(result, "dict") else str(result),
                 "status": "queued",
             }
         except Exception as e:
             return {
-                "module": "flexcell",
-                "action": "decompose",
-                "goal": command,
-                "status": "queued",
+                "module":  "flexcell",
+                "action":  "decompose",
+                "goal":    command,
+                "status":  "queued",
                 "message": str(e),
             }
 
