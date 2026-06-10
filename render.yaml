@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: nexus-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: NEXUS_MODE
+        value: cloud
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: GROQ_API_KEY
+        sync: false
+    autoDeploy: true
