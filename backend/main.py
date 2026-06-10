@@ -10,7 +10,13 @@ import time
 from contextlib import asynccontextmanager
 
 # ── CoboSense imports ─────────────────────────────────────────────
-from modules.cobosense.cobosense_service import CoboSenseService
+try:
+    from modules.cobosense.cobosense_service import CoboSenseService
+    _cobosense_available = True
+except Exception as _e:
+    print(f"[NEXUS] CoboSense unavailable (mediapipe): {_e}")
+    CoboSenseService = None
+    _cobosense_available = False
 from modules.cobosense.cobosense_router import cobosense_router, set_service
 
 from modules.flexcell.flexcell_router import router as flexcell_router
@@ -33,16 +39,25 @@ async def lifespan(app: FastAPI):
     set_broadcast_fn(broadcast_twin_update)
     start_scheduler()
 
-    # ── CoboSense — Layer 3 Safety (always-on) ───────────────────
-    cobosense_svc = CoboSenseService(
-        camera_index=0,
-        broadcast_callback=broadcast_safety_update,
-        fps_target=15,
-    )
-    set_service(cobosense_svc)
-    app.state.cobosense = cobosense_svc
-    asyncio.create_task(cobosense_svc.run_loop())
-    print("[NEXUS] CoboSense Layer 3 Safety — ACTIVE")
+    # ── CoboSense — Layer 3 Safety (graceful fallback) ──────────
+    cobosense_svc = None
+    if _cobosense_available:
+        try:
+            cobosense_svc = CoboSenseService(
+                camera_index=0,
+                broadcast_callback=broadcast_safety_update,
+                fps_target=15,
+            )
+            set_service(cobosense_svc)
+            app.state.cobosense = cobosense_svc
+            asyncio.create_task(cobosense_svc.run_loop())
+            print("[NEXUS] CoboSense Layer 3 Safety — ACTIVE")
+        except Exception as e:
+            print(f"[NEXUS] CoboSense startup failed: {e} — running in mock mode")
+            app.state.cobosense = None
+    else:
+        app.state.cobosense = None
+        print("[NEXUS] CoboSense — mock mode (mediapipe unavailable)")
 
     # ── FlexCell — Multi-robot coordination ─────────────────────
     scheduler = get_scheduler()
@@ -54,7 +69,7 @@ async def lifespan(app: FastAPI):
     yield
 
     stop_scheduler()
-    cobosense_svc.stop()
+    if cobosense_svc: cobosense_svc.stop()
 
     await scheduler.stop()
     await resolver.stop()
@@ -147,12 +162,21 @@ from ros2.bridge import ros_bridge
 # ── POST /command ─────────────────────────────────────────────────
 @app.post("/command")
 async def process_command(payload: dict):
-    user_text = payload.get("text", "")
+    user_text = payload.get("command", "") or payload.get("text", "")
 
     # Layer 1: Pre-LLM safety check
     pre = check_safety(user_text)
     if not pre["safe"]:
         return {"status": "rejected", "stage": "safety_pre", "reason": pre["reason"]}
+    # u2500u2500 Phase 8: Orchestrator routing u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
+    try:
+        from core.orchestrator import Orchestrator
+        _orch = Orchestrator()
+        _res = _orch.handle(user_text)
+        if _res.get("module", "nl2rc") != "nl2rc":
+            return {"status": "ok", "stage": "orchestrated", "module": _res.get("module"), "result": _res}
+    except Exception:
+        pass
 
     # LLM call
     llm_result = await call_llm(user_text)
