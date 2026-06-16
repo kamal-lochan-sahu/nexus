@@ -9,7 +9,7 @@ import re
 from groq import Groq
 
 # ── Config ────────────────────────────────────────────────────────
-GROQ_KEY = open(os.path.expanduser("~/projects/nexus/.groq_token")).read().strip()
+GROQ_KEY = os.environ.get("GROQ_API_KEY", "")
 MODEL    = "llama-3.1-8b-instant"
 client   = Groq(api_key=GROQ_KEY)
 
