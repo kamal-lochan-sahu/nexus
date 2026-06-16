@@ -104,6 +104,7 @@ app.add_middleware(
 
 # ── GET /health ───────────────────────────────────────────────────
 @app.get("/health")
+@app.head("/health")
 async def health():
     """System alive check — load balancer + frontend use karta hai"""
     return {
