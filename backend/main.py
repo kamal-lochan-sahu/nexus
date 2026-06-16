@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     print("[NEXUS] Backend starting...")
     app.state.start_time = time.time()
     app.state.connected_clients = []
-    from backend.modules.cognitive_twin.scheduler import start_scheduler, stop_scheduler, set_broadcast_fn
+    from modules.cognitive_twin.scheduler import start_scheduler, stop_scheduler, set_broadcast_fn
     set_broadcast_fn(broadcast_twin_update)
     start_scheduler()
 
