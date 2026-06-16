@@ -4,12 +4,15 @@ Mount in main.py:  app.include_router(cobosense_router)
 """
 
 from fastapi import APIRouter
-from .cobosense_service import CoboSenseService
+try:
+    from .cobosense_service import CoboSenseService
+except Exception:
+    CoboSenseService = None
 
 cobosense_router = APIRouter(prefix="/safety", tags=["CoboSense"])
 
 # Global service instance (set by main.py lifespan)
-_service: CoboSenseService | None = None
+_service = None
 
 def set_service(svc: CoboSenseService):
     global _service
