@@ -6,7 +6,7 @@ WebSocket alert agar critical
 import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from backend.modules.cognitive_twin.lstm_predictor import get_predictor
+from modules.cognitive_twin.lstm_predictor import get_predictor
 
 _scheduler: AsyncIOScheduler | None = None
 _ws_broadcast_fn = None  # FastAPI se inject hoga

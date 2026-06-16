@@ -11,3 +11,4 @@ pyyaml==6.0.1
 python-multipart==0.0.9
 groq>=1.2.0
 scikit-learn==1.6.1
+# torch optional — only for local RL inference
