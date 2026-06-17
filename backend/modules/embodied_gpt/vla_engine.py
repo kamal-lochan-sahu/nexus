@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 try:
     from groq import Groq
-    with open(os.path.expanduser("~/projects/nexus/.groq_token")) as f:
-        groq_client = Groq(api_key=f.read().strip())
+    import os as _os
+    groq_client = Groq(api_key=_os.environ.get("GROQ_API_KEY", ""))
     GROQ_OK = True
     logger.info("Groq client initialized")
 except Exception as e:

@@ -6,7 +6,12 @@ Frame rule: process only EVEN frames (odd → YOLO placeholder)
 """
 
 import cv2
-import mediapipe as mp
+try:
+    import mediapipe as mp
+    _MP_OK = True
+except ImportError:
+    mp = None
+    _MP_OK = False
 import numpy as np
 import asyncio
 import time

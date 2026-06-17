@@ -5,8 +5,14 @@ Input : (batch, 10, 66)  — 10 timesteps × 33 landmarks × 2 coords
 RAM   : ~150MB inference
 """
 
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+    _TORCH_OK = True
+except ImportError:
+    torch = None
+    nn = None
+    _TORCH_OK = False
 import numpy as np
 import os
 import logging
