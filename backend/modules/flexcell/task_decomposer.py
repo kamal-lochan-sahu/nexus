@@ -1,3 +1,4 @@
+import os
 """
 FlexCell — Step 1: Task Decomposer
 High-level goal → structured JSON task list via Groq LLM
@@ -99,8 +100,8 @@ Format:
 
 class TaskDecomposer:
     def __init__(self):
-        token_path = Path(__file__).parents[3] / ".groq_token"
-        api_key = token_path.read_text().strip()
+        # Use env var for cloud compatibility
+        api_key = os.environ.get("GROQ_API_KEY", "")
         self.client = AsyncGroq(api_key=api_key)
         self.model  = "llama-3.1-8b-instant"
 

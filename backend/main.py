@@ -97,7 +97,7 @@ app.include_router(flexcell_router)    # /flexcell/* endpoints
 # CORS — frontend (Next.js :3000) ko allow karo
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://*.vercel.app"],
+    allow_origins=["http://localhost:3000", "https://nexus-sable-nine.vercel.app", "https://nexus-backend-uq71.onrender.com"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -149,7 +149,10 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.send_text(json.dumps(payload))
             await asyncio.sleep(0.5)
     except WebSocketDisconnect:
-        app.state.connected_clients.remove(websocket)
+        try:
+            app.state.connected_clients.remove(websocket)
+        except ValueError:
+            pass
         print(f"[WS] Client disconnected. Total: {len(app.state.connected_clients)}")
 
 # ── Entry point ───────────────────────────────────────────────────
@@ -190,8 +193,8 @@ async def process_command(payload: dict):
         _res = _orch.handle(user_text)
         if _res.get("module", "nl2rc") != "nl2rc":
             return {"status": "ok", "stage": "orchestrated", "module": _res.get("module"), "result": _res}
-    except Exception:
-        pass
+    except Exception as _orch_ex:
+        print(f"[NEXUS] Orchestrator fallback: {_orch_ex}")
 
     # LLM call
     llm_result = await call_llm(user_text)
@@ -238,7 +241,10 @@ async def process_command(payload: dict):
     elif final["action"] == "move_backward":
         linear_x = -linear_x
 
-    ros_bridge.send_cmd_vel(linear_x=linear_x, angular_z=angular_z)
+    try:
+        ros_bridge.send_cmd_vel(linear_x=linear_x, angular_z=angular_z)
+    except Exception as _e:
+        print(f'[NEXUS] ROS bridge send failed: {_e}')
 
     return {
         "status":   "executed",

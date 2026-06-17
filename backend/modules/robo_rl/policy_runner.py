@@ -68,11 +68,15 @@ class PolicyRunner:
         ]
 
         self._goal_reached = False
-        self._process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        try:
+            self._process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except FileNotFoundError:
+            print("[NEXUS] ROS2 binary not found — RL navigation unavailable")
+            return {"status": "unavailable", "message": "ros2 not found"}
         self._active = True
 
         # Monitor thread — watches for goal reached / crash

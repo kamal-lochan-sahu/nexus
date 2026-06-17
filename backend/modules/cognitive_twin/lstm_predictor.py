@@ -5,8 +5,14 @@ Input : last 24hr joint data from SQLite
 Output: failure probability per joint → twin_forecast table
 """
 
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+    _TORCH_OK = True
+except ImportError:
+    torch = None
+    nn = None
+    _TORCH_OK = False
 import numpy as np
 import pickle
 import json

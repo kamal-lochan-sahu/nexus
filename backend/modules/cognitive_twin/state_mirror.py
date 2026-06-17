@@ -8,7 +8,12 @@ Runs IsolationForest anomaly check on every update
 import asyncio
 import math
 import time
-import rclpy
+try:
+    import rclpy
+    _RCLPY_OK = True
+except ImportError:
+    rclpy = None
+    _RCLPY_OK = False
 from rclpy.node import Node
 from sensor_msgs.msg import JointState, Imu
 from nav_msgs.msg import Odometry
