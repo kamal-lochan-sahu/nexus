@@ -21,3 +21,14 @@ models/lstm_cobosense/*
 .hf_token
 backend/venv/
 .groq_token
+
+# Local backups / venv / caches
+*.bak
+.env.*
+!.env.example
+venv/
+.venv/
+.pytest_cache/
+
+# Third-party (see ros2_ws/nexus.repos)
+ros2_ws/src/unitree_go2_ros2/

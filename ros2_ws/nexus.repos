@@ -1,0 +1,5 @@
+repositories:
+  unitree_go2_ros2:
+    type: git
+    url: https://github.com/khaledgabr77/unitree_go2_ros2.git
+    version: 497409c31e2f54cd5b1a84cb5a0be62fb7e86829

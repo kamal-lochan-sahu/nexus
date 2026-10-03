@@ -1,0 +1,22 @@
+diff --git a/unitree_go2_sim/launch/unitree_go2_launch.py b/unitree_go2_sim/launch/unitree_go2_launch.py
+index e5f17eb..fc121ef 100644
+--- a/unitree_go2_sim/launch/unitree_go2_launch.py
++++ b/unitree_go2_sim/launch/unitree_go2_launch.py
+@@ -41,7 +41,7 @@ def generate_launch_description():
+         description="Use simulation (Gazebo) clock if true",
+     )
+     declare_rviz = DeclareLaunchArgument(
+-        "rviz", default_value="true", description="Launch rviz"
++        "rviz", default_value="false", description="Launch rviz"
+     )
+     declare_robot_name = DeclareLaunchArgument(
+         "robot_name", default_value="go2", description="Robot name"
+@@ -209,7 +209,7 @@ def generate_launch_description():
+                 unitree_go2_description,
+                 'worlds',
+                 'default.sdf'
+-            ]), ' -r']  # Add -r flag to start unpaused
++            ]), ' -r -s']  # Add -r flag to start unpaused
+         }.items(),
+     )
+     
