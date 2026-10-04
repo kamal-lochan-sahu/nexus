@@ -1,0 +1,5 @@
+"""Make `core` and `modules` importable when pytest runs from the repo root or from backend/."""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))

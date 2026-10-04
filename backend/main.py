@@ -155,103 +155,46 @@ async def websocket_endpoint(websocket: WebSocket):
             pass
         print(f"[WS] Client disconnected. Total: {len(app.state.connected_clients)}")
 
-# ── Entry point ───────────────────────────────────────────────────
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
-# ── NL2RC Imports ─────────────────────────────────────────────────
-import sys
-sys.path.insert(0, "/home/kamal/projects/nexus/backend")
-
-from modules.nl2rc.safety_pre import check_safety
+# ── NL2RC ─────────────────────────────────────────────────────────
 from modules.nl2rc.llm_engine import call_llm
-from core.safety_post import validate_command
+from core.command_pipeline import execute_command
+
 try:
     from ros2.bridge import ros_bridge
     _ros_available = True
 except Exception as _ros_err:
     print(f"[NEXUS] ROS2 bridge unavailable: {_ros_err} — cloud mode")
     _ros_available = False
+
     class _MockBridge:
-        def send_cmd_vel(self, **kw): pass
-        def is_connected(self): return False
+        """Cloud mode: no robot. Every send reports failure, so /command never claims 'executed'."""
+        def send_cmd_vel(self, **kw): return False
+        def stop_robot(self, **kw): return False
+
     ros_bridge = _MockBridge()
+
+_orchestrator = None
+
+
+def get_orchestrator():
+    """One shared Orchestrator, so an emergency stop reaches the RL process started earlier."""
+    global _orchestrator
+    if _orchestrator is None:
+        from core.orchestrator import Orchestrator
+        _orchestrator = Orchestrator()
+    return _orchestrator
+
 
 # ── POST /command ─────────────────────────────────────────────────
 @app.post("/command")
 async def process_command(payload: dict):
     user_text = payload.get("command", "") or payload.get("text", "")
-
-    # Layer 1: Pre-LLM safety check
-    pre = check_safety(user_text)
-    if not pre["safe"]:
-        return {"status": "rejected", "stage": "safety_pre", "reason": pre["reason"]}
-    # u2500u2500 Phase 8: Orchestrator routing u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
-    try:
-        from core.orchestrator import Orchestrator
-        _orch = Orchestrator()
-        _res = _orch.handle(user_text)
-        if _res.get("module", "nl2rc") != "nl2rc":
-            return {"status": "ok", "stage": "orchestrated", "module": _res.get("module"), "result": _res}
-    except Exception as _orch_ex:
-        print(f"[NEXUS] Orchestrator fallback: {_orch_ex}")
-
-    # LLM call
-    llm_result = await call_llm(user_text)
-    if "error" in llm_result:
-        return {"status": "error", "stage": "llm", "reason": llm_result["error"]}
-
-    # LLM output se flat command banao
-    try:
-        plan_step = llm_result["plan"][0]
-        params    = plan_step.get("params", {})
-
-        # action map karo
-        direction = params.get("direction", "forward")
-        action_map = {
-            "forward":  "move_forward",
-            "backward": "move_backward",
-            "left":     "turn_left",
-            "right":    "turn_right",
-        }
-        action = action_map.get(direction, "move_forward")
-
-        cmd_dict = {
-            "action":   action,
-            "distance": float(params.get("distance", 0.0)),
-            "velocity": float(params.get("velocity", 0.3)),
-            "confidence": float(llm_result.get("confidence", 1.0)),
-        }
-    except (KeyError, IndexError) as e:
-        return {"status": "error", "stage": "parser", "reason": f"LLM output parse failed: {e}"}
-
-    # Layer 2: Post-LLM safety check
-    post = validate_command(cmd_dict)
-    if not post["safe"]:
-        return {"status": "rejected", "stage": "safety_post", "reason": post["reason"]}
-
-    # Bridge → Robot
-    final = post["command"]
-    linear_x  = final.get("velocity", 0.3)
-    angular_z = 0.0
-    if final["action"] == "turn_left":
-        linear_x, angular_z = 0.0, 0.5
-    elif final["action"] == "turn_right":
-        linear_x, angular_z = 0.0, -0.5
-    elif final["action"] == "move_backward":
-        linear_x = -linear_x
-
-    try:
-        ros_bridge.send_cmd_vel(linear_x=linear_x, angular_z=angular_z)
-    except Exception as _e:
-        print(f'[NEXUS] ROS bridge send failed: {_e}')
-
-    return {
-        "status":   "executed",
-        "command":  final,
-        "modified": post["modified"],
-        "reason":   post["reason"],
-    }
+    return await execute_command(
+        user_text,
+        call_llm=call_llm,
+        get_orchestrator=get_orchestrator,
+        bridge=ros_bridge,
+    )
 
 
 async def build_ws_payload() -> dict:
@@ -358,3 +301,8 @@ async def broadcast_twin_update(data: dict):
     for ws in dead:
         app.state.connected_clients.remove(ws)
     print(f"[WS] Twin alert sent to {len(app.state.connected_clients)} clients")
+
+
+# ── Entry point ───────────────────────────────────────────────────
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
