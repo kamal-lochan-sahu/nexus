@@ -39,6 +39,8 @@ class CoboSenseService:
         self.speed_ctrl   = SpeedController(base_speed=0.5)
 
         self._running = False
+        self.mode = "camera"                      # becomes "simulation" when no camera is available
+        self._last_update: Optional[float] = None  # time.monotonic() of the last payload
         self._current_payload: dict = {
             "human_detected": False,
             "zone": "NONE",
@@ -65,6 +67,12 @@ class CoboSenseService:
     @property
     def current_payload(self) -> dict:
         return self._current_payload
+
+    def age_seconds(self) -> Optional[float]:
+        """Seconds since the last payload; None if there has been none yet."""
+        if self._last_update is None:
+            return None
+        return time.monotonic() - self._last_update
 
     async def run_loop(self):
         """Main async loop — call as asyncio.create_task()"""
@@ -119,6 +127,7 @@ class CoboSenseService:
             )
 
             self._current_payload = payload
+            self._last_update = time.monotonic()
 
             # Broadcast to WebSocket clients
             if self.broadcast:
@@ -137,6 +146,7 @@ class CoboSenseService:
     async def _simulation_loop(self):
         """Fallback if no camera — cycles through zones for testing."""
         logger.info("CoboSense simulation mode active")
+        self.mode = "simulation"
         import math
         t = 0
         while self._running:
@@ -150,6 +160,7 @@ class CoboSenseService:
                 human_detected=True, current_cmd_vel=0.5,
             )
             self._current_payload = payload
+            self._last_update = time.monotonic()
             if self.broadcast:
                 try:
                     await self.broadcast({"safety": payload})

@@ -93,10 +93,27 @@ class FleetScheduler:
             s.status = RobotStatus.ACTIVE
             self._log_event(robot_id, "RESUMED", "")
             logger.info(f"{robot_id} RESUMED")
+        elif s.status == RobotStatus.STOPPED:
+            # Clearing an emergency halt is deliberate: back to IDLE, not straight to ACTIVE.
+            s.status = RobotStatus.IDLE
+            s.speed = 0.0
+            self._log_event(robot_id, "RESET", "stop cleared")
+            logger.info(f"{robot_id} RESET (stop cleared)")
 
     def stop_robot(self, robot_id: str) -> None:
         self._states[robot_id].status = RobotStatus.STOPPED
         self._log_event(robot_id, "STOPPED", "manual")
+
+    def halt_all(self, reason: str = "emergency") -> list[str]:
+        """Emergency halt of every robot at the scheduler. Returns the robot ids halted."""
+        halted = []
+        for robot_id, state in self._states.items():
+            state.status = RobotStatus.STOPPED
+            state.speed = 0.0
+            self._log_event(robot_id, "STOPPED", reason)
+            halted.append(robot_id)
+        logger.warning(f"HALT ALL: {reason}")
+        return halted
 
     def get_fleet_status(self) -> dict:
         pending = sum(q.qsize() for q in self._queues.values())

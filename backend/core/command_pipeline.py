@@ -6,13 +6,15 @@ Order of work:
   2. safety_pre (input screening)
   3. orchestrator routing (visual / fleet / navigation)
   4. LLM parse -> map the LLM *action* to a robot command (unknown actions are rejected)
-  5. safety_post (limits) -> send to the robot -> arm a stop timer
+  5. safety_post (limits) -> human-safety check (CoboSense) -> send to the robot
+  6. arm a stop timer that also re-checks human safety while the robot moves
 
 Status values are honest: "executed" only when the bridge really accepted the command.
 """
 import asyncio
 from typing import Any, Awaitable, Callable, Dict, Optional, Tuple
 
+from core.human_safety import HumanSafety
 from core.safety_post import MAX_LINEAR_VELOCITY, validate_command
 from modules.nl2rc.safety_pre import check_safety, is_emergency
 
@@ -20,6 +22,7 @@ TURN_RATE = 0.5            # rad/s used for turn_left / turn_right
 DEFAULT_MOVE_SECONDS = 2.0  # walk without a distance
 DEFAULT_TURN_SECONDS = 1.0
 MAX_MOTION_SECONDS = 20.0   # hard cap on any single motion
+GUARD_INTERVAL = 0.2        # how often human safety is re-checked while moving
 
 _DIRECTION_TO_ACTION = {
     "forward": "move_forward", "backward": "move_backward", "back": "move_backward",
@@ -86,11 +89,11 @@ def command_to_velocity(command: dict) -> Tuple[float, float]:
     return 0.0, 0.0
 
 
-def motion_seconds(command: dict) -> float:
+def motion_seconds(command: dict, speed_scale: float = 1.0) -> float:
     """Time-based dead reckoning (no odometry): distance / speed, capped."""
     action = command.get("action")
     if action in ("move_forward", "move_backward"):
-        speed = min(abs(float(command.get("velocity", 0.0))), MAX_LINEAR_VELOCITY)
+        speed = min(abs(float(command.get("velocity", 0.0))), MAX_LINEAR_VELOCITY) * speed_scale
         distance = float(command.get("distance", 0.0))
         seconds = distance / speed if distance > 0 and speed > 0 else DEFAULT_MOVE_SECONDS
     else:
@@ -142,14 +145,34 @@ class _MotionWatchdog:
             self._task.cancel()
         self._task = None
 
-    def arm(self, seconds: float, bridge) -> None:
+    def arm(self, seconds: float, bridge, human_safety: Optional[Callable[[], HumanSafety]] = None,
+            velocity: Tuple[float, float] = (0.0, 0.0), multiplier: float = 1.0) -> None:
         self.cancel()
-        self._task = asyncio.get_running_loop().create_task(self._run(seconds, bridge))
+        self._task = asyncio.get_running_loop().create_task(
+            self._run(seconds, bridge, human_safety, velocity, multiplier))
 
     @staticmethod
-    async def _run(seconds: float, bridge) -> None:
+    async def _run(seconds: float, bridge, human_safety, velocity: Tuple[float, float],
+                   multiplier: float) -> None:
+        """Stop after `seconds`. Meanwhile: stop at once if human safety blocks, slow down if it asks."""
+        loop = asyncio.get_running_loop()
+        end = loop.time() + seconds
         try:
-            await asyncio.sleep(seconds)
+            while True:
+                remaining = end - loop.time()
+                if remaining <= 0:
+                    break
+                await asyncio.sleep(min(GUARD_INTERVAL, remaining))
+                if human_safety is None:
+                    continue
+                state = human_safety()
+                if not state.allowed:
+                    print(f"[NEXUS] motion stopped by human safety: {state.reason}")
+                    await _stop_robot(bridge)
+                    return
+                if state.multiplier < multiplier - 1e-9:  # only ever slows down on its own
+                    multiplier = state.multiplier
+                    await _send(bridge, velocity[0] * multiplier, velocity[1] * multiplier)
             await _stop_robot(bridge)
         except asyncio.CancelledError:
             pass
@@ -158,7 +181,8 @@ class _MotionWatchdog:
 _watchdog = _MotionWatchdog()
 
 
-async def emergency_stop(get_orchestrator: Callable[[], Any], bridge) -> Dict[str, Any]:
+async def emergency_stop(get_orchestrator: Callable[[], Any], bridge,
+                         halt_fleet: Optional[Callable[[], Any]] = None) -> Dict[str, Any]:
     _watchdog.cancel()
     stopped = []
     delivered = await _stop_robot(bridge)
@@ -170,9 +194,22 @@ async def emergency_stop(get_orchestrator: Callable[[], Any], bridge) -> Dict[st
     except Exception as exc:  # noqa: BLE001
         print(f"[NEXUS] orchestrator stop failed: {exc}")
 
-    note = "The fleet scheduler is not halted by this path."
+    if halt_fleet is not None:
+        try:
+            if halt_fleet():
+                stopped.append("fleet_scheduler")
+        except Exception as exc:  # noqa: BLE001
+            print(f"[NEXUS] fleet halt failed: {exc}")
+
+    notes = []
     if not delivered:
-        note = "Stop could not be delivered to the robot (bridge offline). " + note
+        notes.append("Stop could not be delivered to the robot (bridge offline).")
+    if "fleet_scheduler" in stopped:
+        notes.append("Fleet halted at the scheduler only; robots already moving in the simulator "
+                     "are not commanded to stop yet. Clear with /flexcell/robot/<id>/resume.")
+    else:
+        notes.append("The fleet scheduler was not halted.")
+    note = " ".join(notes)
     return {
         "status": "stopped" if stopped else "stop_failed",
         "stage": "emergency",
@@ -190,12 +227,14 @@ async def execute_command(
     call_llm: Callable[[str], Awaitable[dict]],
     get_orchestrator: Callable[[], Any],
     bridge,
+    human_safety: Optional[Callable[[], HumanSafety]] = None,
+    halt_fleet: Optional[Callable[[], Any]] = None,
 ) -> Dict[str, Any]:
     text = user_text if isinstance(user_text, str) else ""
 
     # 1. Emergency phrase: never waits for the LLM or the router.
     if is_emergency(text):
-        return await emergency_stop(get_orchestrator, bridge)
+        return await emergency_stop(get_orchestrator, bridge, halt_fleet)
 
     # 2. Input screening
     pre = check_safety(text)
@@ -228,17 +267,24 @@ async def execute_command(
     action = final["action"]
 
     if action == "stop":
-        return await emergency_stop(get_orchestrator, bridge)
+        return await emergency_stop(get_orchestrator, bridge, halt_fleet)
     if action == "status":
         return {"status": "ok", "stage": "status", "command": final, "reason": "Status request; no motion."}
     if action in ("sit", "stand"):
         return {"status": "rejected", "stage": "planner",
                 "reason": "Posture commands (sit/stand) are not wired to the robot yet."}
 
-    linear_x, angular_z = command_to_velocity(final)
-    sent = await _send(bridge, linear_x, angular_z)
+    # 6. Human safety (CoboSense): block, or scale the speed
+    safety = human_safety() if human_safety is not None else None
+    if safety is not None and not safety.allowed:
+        return {"status": "blocked", "stage": "human_safety", "reason": safety.reason,
+                "human_safety": safety.status}
+    scale = safety.multiplier if safety is not None else 1.0
+
+    base_x, base_z = command_to_velocity(final)
+    sent = await _send(bridge, base_x * scale, base_z * scale)
     if sent:
-        _watchdog.arm(motion_seconds(final), bridge)
+        _watchdog.arm(motion_seconds(final, scale), bridge, human_safety, (base_x, base_z), scale)
 
     response: Dict[str, Any] = {
         "status": "executed" if sent else "not_sent",
@@ -247,6 +293,9 @@ async def execute_command(
         "reason": post["reason"] if sent else "Validated but not sent: robot bridge is offline.",
         "sent": sent,
     }
+    if safety is not None:
+        response["human_safety"] = safety.status
+        response["speed_multiplier"] = scale
     if warning:
         response["warning"] = warning
     return response

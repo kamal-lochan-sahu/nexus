@@ -185,6 +185,22 @@ def get_orchestrator():
     return _orchestrator
 
 
+import os as _os
+
+_REQUIRE_COBOSENSE = _os.environ.get("NEXUS_REQUIRE_COBOSENSE", "").strip().lower() in ("1", "true", "yes")
+
+
+def human_safety():
+    """CoboSense verdict for motion commands (see core/human_safety.py)."""
+    from core.human_safety import evaluate
+    return evaluate(getattr(app.state, "cobosense", None), require=_REQUIRE_COBOSENSE)
+
+
+def halt_fleet():
+    """Emergency stop: halt the FlexCell scheduler too."""
+    return get_scheduler().halt_all("emergency stop")
+
+
 # ── POST /command ─────────────────────────────────────────────────
 @app.post("/command")
 async def process_command(payload: dict):
@@ -194,6 +210,8 @@ async def process_command(payload: dict):
         call_llm=call_llm,
         get_orchestrator=get_orchestrator,
         bridge=ros_bridge,
+        human_safety=human_safety,
+        halt_fleet=halt_fleet,
     )
 
 
