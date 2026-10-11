@@ -11,7 +11,7 @@ from modules.nl2rc import llm_engine as le
 GOOD_JSON = json.dumps({"intent": "walk", "plan": [{"step": 1, "action": "walk", "params": {}}], "confidence": 0.9})
 
 
-def fake_client(content=GOOD_JSON, exc=None, delay=0.0, calls=None):
+def fake_client(content=GOOD_JSON, exc=None, delay=0.0, calls=None, finish_reason="stop"):
     def create(**kwargs):
         if calls is not None:
             calls.append(kwargs)
@@ -19,7 +19,8 @@ def fake_client(content=GOOD_JSON, exc=None, delay=0.0, calls=None):
             time.sleep(delay)
         if exc:
             raise exc
-        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
+        choice = SimpleNamespace(message=SimpleNamespace(content=content), finish_reason=finish_reason)
+        return SimpleNamespace(choices=[choice])
     return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
 
 
@@ -27,6 +28,7 @@ def fake_client(content=GOOD_JSON, exc=None, delay=0.0, calls=None):
 def env(monkeypatch, tmp_path):
     """No key in the environment and no key file, plus a recorder for the key the client receives."""
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_MODEL", raising=False)
     monkeypatch.setattr(le, "KEY_FILE", tmp_path / "missing.token")
     seen = {"keys": [], "calls": []}
 
@@ -108,7 +110,7 @@ def test_request_uses_the_model_prompt_and_low_temperature(env):
     env.monkeypatch.setenv("GROQ_API_KEY", "gsk_x")
     call("turn left")
     request = env.seen["calls"][0]
-    assert request["model"] == le.MODEL and request["temperature"] == 0.1
+    assert request["model"] == "openai/gpt-oss-20b" and request["temperature"] == 0.1
     assert request["messages"][0] == {"role": "system", "content": le.SYSTEM_PROMPT}
     assert request["messages"][1] == {"role": "user", "content": "turn left"}
 
@@ -127,7 +129,8 @@ def test_api_error_is_reported_without_raising(env):
 
 @pytest.mark.parametrize("content,expected", [
     ("I cannot do that", "No JSON in response"),
-    (None, "No JSON in response"),
+    (None, "LLM returned no text"),
+    ("   ", "LLM returned no text"),
     ("{not valid json}", "JSON parse failed"),
 ])
 def test_bad_model_output_is_reported(env, content, expected):
@@ -162,3 +165,59 @@ def test_slow_api_call_does_not_block_the_event_loop(env):
 
     result, ticks = asyncio.run(scenario())
     assert result["intent"] == "walk" and ticks >= 4   # the loop kept running during the 0.4 s call
+
+
+# ── model selection and request options ──────────────────────────
+
+def test_default_model_is_the_groq_recommended_replacement(env):
+    assert le.get_model() == "openai/gpt-oss-20b"
+
+
+def test_gpt_oss_request_keeps_reasoning_short_and_leaves_room_for_the_answer(env):
+    env.monkeypatch.setenv("GROQ_API_KEY", "gsk_x")
+    call()
+    request = env.seen["calls"][0]
+    assert request["reasoning_effort"] == "low" and request["max_completion_tokens"] == 1024
+    assert "max_tokens" not in request
+
+
+def test_other_models_use_the_classic_token_limit(env):
+    env.monkeypatch.setenv("GROQ_API_KEY", "gsk_x")
+    env.monkeypatch.setenv("GROQ_MODEL", "some-vendor/some-model")
+    call()
+    request = env.seen["calls"][0]
+    assert request["model"] == "some-vendor/some-model"
+    assert request["max_tokens"] == 300 and "reasoning_effort" not in request
+
+
+@pytest.mark.parametrize("retired,replacement", [
+    ("llama-3.1-8b-instant", "openai/gpt-oss-20b"),
+    ("llama-3.3-70b-versatile", "openai/gpt-oss-120b"),
+])
+def test_retired_model_ids_are_mapped_to_their_replacement(env, retired, replacement):
+    env.monkeypatch.setenv("GROQ_MODEL", retired)
+    assert le.get_model() == replacement
+
+
+def test_blank_model_variable_falls_back_to_the_default(env):
+    env.monkeypatch.setenv("GROQ_MODEL", "   ")
+    assert le.get_model() == le.DEFAULT_MODEL
+
+
+@pytest.mark.parametrize("message", [
+    "Error code: 404 - {'error': {'code': 'model_not_found'}}",
+    "The model has been decommissioned",
+])
+def test_unavailable_model_gets_an_actionable_error(env, message):
+    env.monkeypatch.setenv("GROQ_API_KEY", "gsk_x")
+    env.monkeypatch.setattr(le, "_get_client", lambda key: fake_client(exc=RuntimeError(message)))
+    error = call()["error"]
+    assert "openai/gpt-oss-20b" in error and "GROQ_MODEL" in error and "deprecations" in error
+    assert not error.startswith("Groq API error")
+
+
+def test_out_of_tokens_is_explained(env):
+    env.monkeypatch.setenv("GROQ_API_KEY", "gsk_x")
+    env.monkeypatch.setattr(le, "_get_client", lambda key: fake_client(content="", finish_reason="length"))
+    error = call()["error"]
+    assert "finish_reason=length" in error and "token limit" in error

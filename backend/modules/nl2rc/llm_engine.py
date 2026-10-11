@@ -10,7 +10,13 @@ from pathlib import Path
 from typing import Optional
 
 # ── Config ────────────────────────────────────────────────────────
-MODEL = "llama-3.1-8b-instant"
+# Groq retired llama-3.1-8b-instant on 2026-08-16; its recommended replacement is gpt-oss-20b.
+# Override with the GROQ_MODEL environment variable (see https://console.groq.com/docs/models).
+DEFAULT_MODEL = "openai/gpt-oss-20b"
+RETIRED_MODELS = {
+    "llama-3.1-8b-instant": "openai/gpt-oss-20b",
+    "llama-3.3-70b-versatile": "openai/gpt-oss-120b",
+}
 REQUEST_TIMEOUT_SECONDS = 10.0
 # Local-development fallback: a git-ignored file in the repo root (see .gitignore).
 KEY_FILE = Path(__file__).resolve().parents[3] / ".groq_token"
@@ -47,6 +53,26 @@ Safety limits — never exceed:
 - max velocity: 0.5 m/s
 - max distance: 5.0 m
 - max rotation: 180 degrees"""
+
+
+# ── Model selection ───────────────────────────────────────────────
+def get_model() -> str:
+    """GROQ_MODEL from the environment (retired ids are mapped to their replacement)."""
+    model = os.environ.get("GROQ_MODEL", "").strip() or DEFAULT_MODEL
+    return RETIRED_MODELS.get(model, model)
+
+
+def request_options(model: str) -> dict:
+    """gpt-oss models reason before answering and the reasoning counts against the token limit:
+    keep it short and leave room for the JSON. Other models use the classic limit."""
+    if model.startswith("openai/gpt-oss"):
+        return {"reasoning_effort": "low", "max_completion_tokens": 1024}
+    return {"max_tokens": 300}
+
+
+def _model_unavailable(message: str) -> bool:
+    lowered = message.lower()
+    return "model_not_found" in lowered or "decommission" in lowered
 
 
 # ── API key and client ────────────────────────────────────────────
@@ -93,24 +119,34 @@ async def call_llm(user_input: str) -> dict:
         # so say what is actually wrong.
         return {"error": MISSING_KEY_ERROR}
 
+    model = get_model()
     try:
         client = _get_client(key)
         # The Groq client is synchronous: run it in a thread so the event loop stays free.
         response = await asyncio.to_thread(
             client.chat.completions.create,
-            model=MODEL,
+            model=model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user",   "content": user_input},
             ],
-            max_tokens=300,
             temperature=0.1,
+            **request_options(model),
         )
-        generated_text = response.choices[0].message.content or ""
+        choice = response.choices[0]
+        generated_text = choice.message.content or ""
+        if not generated_text.strip():
+            reason = getattr(choice, "finish_reason", None)
+            return {"error": f"LLM returned no text (finish_reason={reason}). "
+                             "A reasoning model may have used up its token limit."}
         return _extract_json(generated_text, user_input)
 
     except Exception as e:
-        return {"error": f"Groq API error: {str(e)}"}
+        message = str(e)
+        if _model_unavailable(message):
+            return {"error": f"Groq model '{model}' is unavailable (retired or no access). "
+                             "Set GROQ_MODEL to a current model: https://console.groq.com/docs/deprecations"}
+        return {"error": f"Groq API error: {message}"}
 
 
 def _extract_json(text: str, original_input: str) -> dict:
