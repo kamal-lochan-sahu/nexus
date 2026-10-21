@@ -9,7 +9,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from .task_decomposer import get_decomposer
+from .task_decomposer import LLMUnavailableError, get_decomposer
 from .fleet_scheduler  import get_scheduler
 from .conflict_resolver import get_resolver
 from core.auth import require_api_key
@@ -41,7 +41,10 @@ async def submit_task(req: TaskRequest):
     decomposer = get_decomposer()
     scheduler  = get_scheduler()
 
-    result = await decomposer.decompose(req.goal)
+    try:
+        result = await decomposer.decompose(req.goal)
+    except LLMUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     await scheduler.enqueue_tasks(result.tasks)
 
     logger.info(f"FlexCell task accepted: {len(result.tasks)} subtasks")

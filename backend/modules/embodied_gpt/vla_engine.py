@@ -13,13 +13,28 @@ logger = logging.getLogger(__name__)
 
 try:
     from groq import Groq
-    import os as _os
-    groq_client = Groq(api_key=_os.environ.get("GROQ_API_KEY", ""))
     GROQ_OK = True
-    logger.info("Groq client initialized")
 except Exception as e:
     GROQ_OK = False
     logger.warning(f"Groq not available: {e}")
+
+try:    # shared key / model handling (needs the backend folder on sys.path)
+    from core.groq_config import extract_json_object, get_api_key, get_model, request_options
+except Exception as e:
+    GROQ_OK = False
+    logger.warning(f"Groq config not available: {e}")
+
+_groq_client = None
+_groq_client_key = None
+
+
+def _get_groq_client(key):
+    """Create the Groq client on first use (and again if the key changes)."""
+    global _groq_client, _groq_client_key
+    if _groq_client is None or _groq_client_key != key:
+        _groq_client = Groq(api_key=key, timeout=8.0, max_retries=0)
+        _groq_client_key = key
+    return _groq_client
 
 VLA_SYSTEM_PROMPT = """You are a VLA controller for Unitree Go2 robot.
 Output ONLY valid JSON. No markdown. No explanation.
@@ -117,22 +132,26 @@ class VLAEngine:
             # SIGALRM: Linux-native 8s hard timeout
             signal.signal(signal.SIGALRM, _sigalrm_handler)
             signal.alarm(8)
-            resp = groq_client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+            key = get_api_key()
+            if not key:
+                signal.alarm(0)
+                logger.warning("GROQ_API_KEY is not set — fallback")
+                return self._fallback(command, detections, scene_summary,
+                                       clip_sim, target_found)
+            model = get_model()
+            resp = _get_groq_client(key).chat.completions.create(
+                model=model,
                 messages=[
                     {"role": "system", "content": VLA_SYSTEM_PROMPT},
                     {"role": "user",   "content": prompt}
                 ],
-                max_tokens=350,
-                temperature=0.1
+                temperature=0.1,
+                **request_options(model, max_tokens=350)
             )
             signal.alarm(0)  # Cancel alarm
-            raw = resp.choices[0].message.content.strip()
-            if "```" in raw:
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-            result = json.loads(raw.strip())
+            result = extract_json_object(resp.choices[0].message.content or "")
+            if result is None:
+                raise ValueError("no JSON object in the LLM answer")
             result["original_input"] = command
             result["module_used"] = "embodied_gpt"
             return result
