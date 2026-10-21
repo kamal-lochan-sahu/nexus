@@ -10,7 +10,8 @@ import json
 import sys
 import os
 
-BACKEND = "http://localhost:8000"
+BACKEND = os.environ.get("NEXUS_BACKEND", "http://localhost:8000")
+HEADERS = {"X-API-Key": os.environ["NEXUS_API_KEY"]} if os.environ.get("NEXUS_API_KEY") else {}
 CYAN    = "\033[96m"
 GREEN   = "\033[92m"
 YELLOW  = "\033[93m"
@@ -48,6 +49,7 @@ def send_command(command: str) -> dict:
         r = requests.post(
             f"{BACKEND}/command",
             json={"command": command},
+            headers=HEADERS,
             timeout=8,
         )
         return r.json()

@@ -33,6 +33,12 @@ from fastapi.middleware.cors import CORSMiddleware
 async def lifespan(app: FastAPI):
     # Ye code server start hone pe chalta hai
     print("[NEXUS] Backend starting...")
+    from core.auth import auth_enabled
+    if auth_enabled():
+        print("[NEXUS] API key auth: ON (POST /command and fleet controls need the X-API-Key header)")
+    else:
+        print("[NEXUS] WARNING: NEXUS_API_KEY is not set - POST /command and the fleet controls "
+              "are OPEN to anyone who can reach this server")
     app.state.start_time = time.time()
     app.state.connected_clients = []
     try:
@@ -158,6 +164,8 @@ async def websocket_endpoint(websocket: WebSocket):
 # ── NL2RC ─────────────────────────────────────────────────────────
 from modules.nl2rc.llm_engine import call_llm
 from core.command_pipeline import execute_command
+from core.auth import require_api_key
+from fastapi import Depends
 
 try:
     from ros2.bridge import ros_bridge
@@ -202,7 +210,7 @@ def halt_fleet():
 
 
 # ── POST /command ─────────────────────────────────────────────────
-@app.post("/command")
+@app.post("/command", dependencies=[Depends(require_api_key)])
 async def process_command(payload: dict):
     user_text = payload.get("command", "") or payload.get("text", "")
     return await execute_command(

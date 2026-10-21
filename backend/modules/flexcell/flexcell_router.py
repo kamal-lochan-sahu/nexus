@@ -6,12 +6,13 @@ GET  /flexcell/log    → coordination event log
 """
 
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from .task_decomposer import get_decomposer
 from .fleet_scheduler  import get_scheduler
 from .conflict_resolver import get_resolver
+from core.auth import require_api_key
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/flexcell", tags=["FlexCell"])
@@ -28,7 +29,7 @@ class TaskResponse(BaseModel):
     confidence: float
 
 
-@router.post("/task", response_model=TaskResponse)
+@router.post("/task", response_model=TaskResponse, dependencies=[Depends(require_api_key)])
 async def submit_task(req: TaskRequest):
     """
     POST /flexcell/task
@@ -70,7 +71,7 @@ async def get_log():
     }
 
 
-@router.post("/robot/{robot_id}/pause")
+@router.post("/robot/{robot_id}/pause", dependencies=[Depends(require_api_key)])
 async def pause_robot(robot_id: str):
     if robot_id not in ("go2_a", "go2_b"):
         raise HTTPException(status_code=400, detail="Invalid robot_id")
@@ -78,7 +79,7 @@ async def pause_robot(robot_id: str):
     return {"status": "paused", "robot": robot_id}
 
 
-@router.post("/robot/{robot_id}/resume")
+@router.post("/robot/{robot_id}/resume", dependencies=[Depends(require_api_key)])
 async def resume_robot(robot_id: str):
     if robot_id not in ("go2_a", "go2_b"):
         raise HTTPException(status_code=400, detail="Invalid robot_id")
@@ -86,7 +87,7 @@ async def resume_robot(robot_id: str):
     return {"status": "resumed", "robot": robot_id}
 
 
-@router.post("/robot/{robot_id}/stop")
+@router.post("/robot/{robot_id}/stop", dependencies=[Depends(require_api_key)])
 async def stop_robot(robot_id: str):
     if robot_id not in ("go2_a", "go2_b"):
         raise HTTPException(status_code=400, detail="Invalid robot_id")
