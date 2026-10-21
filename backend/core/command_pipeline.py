@@ -23,6 +23,7 @@ DEFAULT_MOVE_SECONDS = 2.0  # walk without a distance
 DEFAULT_TURN_SECONDS = 1.0
 MAX_MOTION_SECONDS = 20.0   # hard cap on any single motion
 GUARD_INTERVAL = 0.2        # how often human safety is re-checked while moving
+AUDIT_TIMEOUT_SECONDS = 2.0  # a slow database must not hold up the response
 
 _DIRECTION_TO_ACTION = {
     "forward": "move_forward", "backward": "move_backward", "back": "move_backward",
@@ -221,7 +222,7 @@ async def emergency_stop(get_orchestrator: Callable[[], Any], bridge,
 
 # ── Main entry ────────────────────────────────────────────────────
 
-async def execute_command(
+async def _execute(
     user_text: Any,
     *,
     call_llm: Callable[[str], Awaitable[dict]],
@@ -299,3 +300,19 @@ async def execute_command(
     if warning:
         response["warning"] = warning
     return response
+
+
+async def execute_command(
+    user_text: Any,
+    *,
+    audit: Optional[Callable[[Any, Dict[str, Any]], Awaitable[None]]] = None,
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    """Run a command and, if `audit` is given, record the outcome. Auditing never changes the result."""
+    result = await _execute(user_text, **kwargs)
+    if audit is not None:
+        try:
+            await asyncio.wait_for(audit(user_text, result), timeout=AUDIT_TIMEOUT_SECONDS)
+        except Exception as exc:  # noqa: BLE001  (a timeout is an Exception too)
+            print(f"[NEXUS] audit failed: {exc!r}")
+    return result

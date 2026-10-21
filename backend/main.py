@@ -39,6 +39,11 @@ async def lifespan(app: FastAPI):
     else:
         print("[NEXUS] WARNING: NEXUS_API_KEY is not set - POST /command and the fleet controls "
               "are OPEN to anyone who can reach this server")
+    try:
+        from backend.database.models import init_db
+        await init_db()
+    except Exception as _db_err:
+        print(f"[NEXUS] Database unavailable: {_db_err} - command log and twin history disabled")
     app.state.start_time = time.time()
     app.state.connected_clients = []
     try:
@@ -209,6 +214,14 @@ def halt_fleet():
     return get_scheduler().halt_all("emergency stop")
 
 
+async def audit(user_text, result):
+    """Record a /command outcome in command_log (and safety_events). Never raises."""
+    from backend.database import crud
+    from core.audit import record_outcome
+    await record_outcome(user_text, result, log_command=crud.log_command,
+                         log_safety_event=crud.log_safety_event)
+
+
 # ── POST /command ─────────────────────────────────────────────────
 @app.post("/command", dependencies=[Depends(require_api_key)])
 async def process_command(payload: dict):
@@ -220,7 +233,15 @@ async def process_command(payload: dict):
         bridge=ros_bridge,
         human_safety=human_safety,
         halt_fleet=halt_fleet,
+        audit=audit,
     )
+
+
+@app.get("/commands/recent", dependencies=[Depends(require_api_key)])
+async def recent_commands(limit: int = 50):
+    """Newest first. Needs the API key when NEXUS_API_KEY is set (the log contains what operators typed)."""
+    from backend.database.crud import get_recent_commands
+    return {"commands": await get_recent_commands(max(1, min(limit, 200)))}
 
 
 async def build_ws_payload() -> dict:

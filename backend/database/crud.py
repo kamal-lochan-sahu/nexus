@@ -139,3 +139,14 @@ async def batch_flush(
                 rows,
             )
             await db.commit()
+
+
+async def get_recent_commands(limit: int = 50) -> list[dict]:
+    """Newest first."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT id,timestamp,robot_id,input_text,module_used,intent,confidence,status,blocked_by,blocked_reason "
+            "FROM command_log ORDER BY id DESC LIMIT ?", (int(limit),)
+        ) as cur:
+            return [dict(row) for row in await cur.fetchall()]

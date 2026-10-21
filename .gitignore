@@ -32,3 +32,6 @@ venv/
 
 # Third-party (see ros2_ws/nexus.repos)
 ros2_ws/src/unitree_go2_ros2/
+
+# Local database (created on startup; see NEXUS_DB_PATH)
+data/*.db*

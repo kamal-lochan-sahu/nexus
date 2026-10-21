@@ -1,8 +1,12 @@
 import aiosqlite
 import asyncio
+import os
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent.parent / "data" / "nexus.db"
+# NEXUS_DB_PATH overrides the location. The default (data/nexus.db) is git-ignored and is
+# created at startup by init_db(), so the repository does not need to ship a database.
+DB_PATH = Path(os.environ.get("NEXUS_DB_PATH", "").strip()
+               or Path(__file__).parent.parent.parent / "data" / "nexus.db")
 
 CREATE_ROBOT_STATE = """
 CREATE TABLE IF NOT EXISTS robot_state (
