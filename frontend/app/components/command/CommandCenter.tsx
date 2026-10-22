@@ -7,10 +7,6 @@ interface CmdResult {
   safetyL1: 'PASS'|'FAIL'; safetyL2: 'PASS'|'FAIL'; status: string
 }
 
-const _INTENTS: Record<string,{intent:string;module:string;conf:number}> = {
-  default: { intent:'navigate_to_waypoint', module:'NL2RC', conf:0.91 },
-}
-
 const EXAMPLES = [
   'navigate to zone 2',
   'inspect zone 3 for obstacles',
@@ -55,7 +51,8 @@ export default function CommandCenter() {
     }
     const result: CmdResult = {
       id: idRef.current++, input, ts: Date.now(),
-      ...parsed, safetyL1:'PASS', safetyL2:'PASS', status:'DISPATCHED',
+      intent: parsed.intent, module: parsed.module, confidence: parsed.conf,
+      safetyL1:'PASS', safetyL2:'PASS', status:'DISPATCHED',
     }
     setCurrent(result)
     setHistory(h => [result, ...h].slice(0, 20))

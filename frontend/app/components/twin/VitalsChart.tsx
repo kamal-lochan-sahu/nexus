@@ -22,7 +22,7 @@ export default function VitalsChart({ history }: Props) {
           <Tooltip
             contentStyle={{ background:'var(--bg-card)', border:'1px solid var(--border)',
               borderRadius:3, fontSize:10, fontFamily:'var(--font-mono)' }}
-            formatter={(v: number) => [`${v.toFixed(1)}%`, 'Health']}
+            formatter={(v) => [`${Number(v).toFixed(1)}%`, 'Health']}
             labelFormatter={() => ''}
           />
           <Line type="monotone" dataKey="v" stroke="var(--accent-cyan)"

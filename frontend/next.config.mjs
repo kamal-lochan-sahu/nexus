@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  eslint:     { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors:  true },
-}
+// TypeScript and ESLint errors now fail the build (they used to be ignored).
+const nextConfig = {}
 export default nextConfig
