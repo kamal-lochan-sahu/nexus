@@ -23,6 +23,11 @@ import time
 import os
 
 try:
+    from .policy_path import find_policy
+except ImportError:          # run as a plain script, not as part of the package
+    from policy_path import find_policy
+
+try:
     from stable_baselines3 import PPO
     SB3_AVAILABLE = True
 except ImportError:
@@ -57,9 +62,8 @@ class RLPolicyNode(Node):
         self.declare_parameter("goal_x",       2.5)
         self.declare_parameter("goal_y",       2.5)
         self.declare_parameter("goal_zone",    "")   # "A/B/C/D" overrides x,y
-        self.declare_parameter("policy_path",
-            os.path.join(os.path.dirname(__file__),
-                         "../../../../../../models/ppo_go2/best_model.zip"))
+        # empty = look for models/ppo_go2/best_model.zip (or use NEXUS_POLICY_PATH)
+        self.declare_parameter("policy_path", "")
         self.declare_parameter("active", False)
 
         # ── State ───────────────────────────────────────────────────
@@ -106,9 +110,13 @@ class RLPolicyNode(Node):
         if not SB3_AVAILABLE:
             self.get_logger().error("stable_baselines3 not installed!")
             return
-        path = self.get_parameter("policy_path").value
-        if not os.path.exists(path):
-            self.get_logger().error(f"Policy not found: {path}")
+        given = self.get_parameter("policy_path").value
+        path = find_policy(given)
+        if not path:
+            self.get_logger().error(
+                f"Policy not found (policy_path='{given}'). Set the policy_path parameter or the "
+                "NEXUS_POLICY_PATH environment variable, or run from the repo so "
+                "models/ppo_go2/best_model.zip can be found.")
             return
         import torch
         with torch.no_grad():

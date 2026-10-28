@@ -14,3 +14,16 @@ source install/setup.bash
 ```
 
 Upstream ki apni dependencies ke liye uska README dekho: https://github.com/khaledgabr77/unitree_go2_ros2.git
+
+## Run the nodes
+
+```bash
+colcon build --packages-select nexus_robot
+source install/setup.bash
+ros2 run nexus_robot fleet_node
+ros2 run nexus_robot rl_policy_node --ros-args -p goal_zone:=B -p active:=true
+```
+
+`rl_policy_node` needs `pip install stable-baselines3 torch`. It looks for the trained policy in
+`models/ppo_go2/best_model.zip` (searching upwards from the source tree and from the current folder).
+Set `NEXUS_POLICY_PATH` or the `policy_path` parameter to use another file.
